@@ -1,14 +1,29 @@
-/** flag for dynamic import  */
-const DYMAMIC_IMPORT = false;
 
+import { BgrXmlLoader } from './bgr/bgr.xml.js'
+import { readFile } from './bgr/bgr.util.js'
+import { DamageLog } from './dmglog.js'
 
 onload = function() {
-    const loader = new BgrXmlLoader(DYMAMIC_IMPORT);
     const dmglog = new DamageLog();
-    
-    loader.addListener(function() {
-        dmglog.setLoader(loader);
-    });
 
-    loader.initialize();
+    /** @type {HTMLInputElement} */
+    const xmlFile = document.getElementById('xml-file');
+    /** @type {HTMLLabelElement} */
+    const xmlFileLabel = document.getElementById('xml-file-label');
+
+    xmlFile.addEventListener('change', function() {
+        if (xmlFile.files.length) {
+            const file = xmlFile.files[0];
+            readFile(file, function(ev) {
+                const loader = new BgrXmlLoader();
+                if (loader.loadXml(ev.target.result)) {
+                    xmlFileLabel.textContent = file.name;
+                    dmglog.setLoader(loader);
+                }
+                else {
+                    xmlFileLabel.textContent = 'ファイルが間違っているか壊れています';
+                }
+            });
+        }
+    });
 }
