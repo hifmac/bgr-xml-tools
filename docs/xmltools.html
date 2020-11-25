@@ -35,9 +35,21 @@
                         <label class="custom-file-label" for="damage-log-file" id="damage-log-file-label">ログファイル</label>
                     </div>
                     <div class="mb-2">
+                        <button class="btn btn-primary mb-2"
+                            data-toggle="collapse"
+                            data-target="#damage-log-per-unit-table-collapse"
+                            aria-expand="true"
+                            aria-controls="damage-log-per-unit-table-collapse">ユニットログ</button>
+                        <button class="btn btn-primary mb-2"
+                            data-toggle="collapse"
+                            data-target="#damage-log-table-collapse"
+                            aria-expand="true"
+                            aria-controls="damage-log-table-collapse">ダメージログ</button>
+                    </div>
+                    <div class="collapse mb-2" id="damage-log-per-unit-table-collapse">
                         <table class="table table-hover table-striped table-bordered" id="damage-log-per-unit-table"></table>
                     </div>
-                    <div class="mb-2">
+                    <div class="collapse mb-2 show" id="damage-log-table-collapse">
                         <table class="table table-hover table-striped table-bordered" id="damage-log-table"></table>
                     </div>
                 </div>
