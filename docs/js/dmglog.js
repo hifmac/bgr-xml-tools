@@ -91,8 +91,6 @@ DamageLog.prototype.onFileRead = function DamageLog_onFileRead(ev) {
         }
     }
 
-    console.log(uid_map);
-
     /** @type {Map<number, BgrJsonBattleAction>} */
     const action_map = new Map();
     for (let baction of bactions) {
@@ -227,8 +225,6 @@ DamageLog.prototype.createUnitLog = function DamageLog_createCharacterLog(action
 
     const tbody = document.createElement('tbody');
     for (let uid of uid_map.keys()) {
-        const name = uid_map.get(uid);
-        console.log(data[uid]);
         if (data[uid].take.damage || data[uid].take.hit || data[uid].take.critical) {
             tbody.appendChild(createRow([
                 uid_map.get(uid),
