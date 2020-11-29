@@ -89,6 +89,14 @@ BgrXmlLoader.prototype.getSkillBase = function BgrXmlLoader_getSkillBase(skillId
     return this.__skillBaseMap.get(String(skillId));
 }
 
+BgrXmlLoader.prototype.getBufferBase = function BgrXmlLoader_getBufferBase(bufferId) {
+    return this.__bufferBaseMap.get(String(bufferId));
+}
+
+BgrXmlLoader.prototype.getItem = function BgrXmlLoader_getItem(itemid) {
+    return this.__itemMap.get(String(itemid));
+}
+
 /**
  * BGR unit base
  * @param {Element} node 

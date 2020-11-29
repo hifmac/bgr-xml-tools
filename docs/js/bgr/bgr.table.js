@@ -1,4 +1,10 @@
-import { clearChild, compareAsc, compareDesc } from './bgr.util.js'
+import {
+    clearChild,
+    compareAsc,
+    compareDesc,
+    createElement,
+    updateElement,
+} from './bgr.util.js'
 
 /*return {
     'data-toggle': 'tooltip',
@@ -39,6 +45,32 @@ Column.prototype.string = function Column_string(value) {
     return (this.format ? this.format(value) : value);
 };
 
+/**
+ * table row
+ * @param {(number | string)[]} cells 
+ * @param {{
+ *     styles: Object,
+ *     classes: string[],
+ *     attributes: Object,
+ * }} options 
+ */
+export function Row(cells, options) {
+    this.cells = cells;
+    this.options = options;
+}
+
+/** @type {(number | string)[]} */
+Row.prototype.cells = null;
+
+/**
+ * @type {{
+ *     styles: Object,
+ *     classes: string[],
+ *     attributes: Object,
+ * }}
+ */
+Row.prototype.options = null;
+
 export function Table() {
 }
 
@@ -49,40 +81,16 @@ export function Table() {
 Table.prototype.columns = null;
 
 /**
- * data objects to show
- * @type {Object[]}
+ * data rows to show
+ * @type {Row[]}
  */
-Table.prototype.objects = null;
+Table.prototype.rows = null;
 
 /**
  * table element
  * @type {HTMLTableElement}
  */
 Table.prototype.element = null
-
-/**
- * header tag class list 
- * @type {string[]}
- */
-Table.prototype.headerCellClasses = [];
-
-/**
- * header tag attributes
- * @type {Object}
- */
-Table.prototype.headerCellAttributes = {};
-
-/** 
- * header tag class list
- * @type {string[]}
- */
-Table.prototype.bodyCellClasses = [];
-
-/** 
- * header tag attributes
- * @type {Object}
- */
-Table.prototype.bodyCellAttributes = {};
 
 /**
  * table sort column
@@ -100,7 +108,7 @@ Table.prototype.sortDescending = false;
  * update table column
  */
 Table.prototype.update = function Table_update() {
-    if (this.columns && this.objects && this.element) {
+    if (this.columns && this.rows && this.element) {
         clearChild(this.element);
         this.element.classList.add('table-prewrap');
         this.element.appendChild(this.createHeader());
@@ -108,22 +116,6 @@ Table.prototype.update = function Table_update() {
     }
 }
 
-/**
- * create table row
- * @returns {HTMLTableRowElement}
- */
-Table.prototype.createCell = function Table_createCell(cellName, text, classNames, attributes) {
-    /** @type {HTMLTableCellElement} */
-    const cell = document.createElement(cellName);
-    cell.textContent = text;
-    for (let className of classNames) {
-        cell.classList.add(className);
-    }
-    for (let attrname in attributes) {
-        cell.setAttribute(attrname, attributes[attrname]);
-    }
-    return cell;
-};
 
 /**
  * create table header
@@ -134,7 +126,7 @@ Table.prototype.createHeader = function Table_createHeader() {
     const row = document.createElement('tr');
     for (let column of this.columns) {
         const columnName = column.name + (this.sortColumn === column ? (this.sortDescending ? '▽' : '△') : ''); 
-        const cell = this.createCell('th', columnName, this.headerCellClasses, this.headerCellAttributes);
+        const cell = createElement('th', columnName);
         cell.addEventListener('click', this.onHeaderClicked.bind(this, column));
         row.append(cell);
     }
@@ -158,7 +150,7 @@ Table.prototype.createBody = function Table_createBody() {
         for (let i in this.columns) {
             if (this.sortColumn === this.columns[i]) {
                 const compare = this.sortDescending ? compareDesc : compareAsc;
-                this.objects.sort((a, b) => compare(a[i], b[i]));
+                this.rows.sort((a, b) => compare(a.cells[i], b.cells[i]));
                 break;
             }
         }
@@ -166,15 +158,20 @@ Table.prototype.createBody = function Table_createBody() {
 
     /** @type {HTMLTableSectionElement} */
     const tbody = document.createElement('tbody');
-    for (let data of this.objects) {
+    console.log(this.rows);
+    for (let row of this.rows) {
         /** @type {HTMLTableRowElement} */
-        const row = document.createElement('tr');
-        for (let i in data) {
+        const tr = document.createElement('tr');
+        if (row.options) {
+            updateElement(tr, row.options);
+        }
+        console.log(tr, row);
+        for (let i in row.cells) {
             if (this.columns[i].isEnabled) {
-                row.append(this.createCell('td', this.columns[i].string(data[i]), this.bodyCellClasses, this.bodyCellAttributes));
+                tr.append(createElement('td', this.columns[i].string(row.cells[i])));
             }
         }
-        tbody.append(row);
+        tbody.append(tr);
     }
 
     return tbody;
@@ -185,8 +182,6 @@ Table.prototype.createBody = function Table_createBody() {
  * @param {Column} column 
  */
 Table.prototype.onHeaderClicked = function Table_onHeaderClicked(column) {
-    console.log('clicked!');
-
     if (this.sortColumn === column) {
         this.sortDescending = !this.sortDescending;
     }

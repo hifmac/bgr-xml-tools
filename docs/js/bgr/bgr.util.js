@@ -10,8 +10,9 @@ export function clearChild(elem) {
 
 /**
  * returns the last element of an array
- * @param {Array<Object>} arr 
- * @returns {Object} the last element of the array
+ * @template T type in the array
+ * @param {Array<T>} arr to get last element
+ * @returns {T} the last element of the array
  */
 export function lastElement(arr) {
     return arr[arr.length - 1];
@@ -81,3 +82,75 @@ export function compareDeep(a, b) {
     return true;
 }
 
+export const updateTooltip = (function() {
+    let updateTimer = null;
+    let isPending = false;
+
+    function updater() {
+        if (isPending) {
+            isPending = false;
+
+            const tooltips = document.getElementsByClassName('tooltip');
+            for (let i in tooltips) {
+                if (tooltips[i].parentNode) {
+                    tooltips[i].parentNode.removeChild(tooltips[i]);
+                }
+            }
+
+            updateTimer = setTimeout(updater, 2000);
+            $('[data-toggle="tooltip"]').tooltip({html: true});
+        }
+        else {
+            updateTimer = null;
+        }
+    };
+
+    return function() {
+        isPending = true;
+        if (updateTimer == null) {
+            updater();
+        }
+    };
+}());
+
+/**
+ * create element attributes
+ * @param {HTMLElement} element 
+ * @param {{
+ *     styles: Object,
+ *     classes: string[],
+ *     attributes: Object,
+ * }} options 
+ */
+export function updateElement(element, options) {
+    if (options.styles) {
+        for (let key of Object.keys(options.styles)) {
+            element.style[key] = options.styles[key];
+        }        
+    }
+
+    if (options.classes) {
+        for (let cls of options.classes) {
+            element.classList.add(cls);
+        }
+    }
+
+    if (options.attributes) {
+        for (let key of Object.keys(options.attributes)) {
+            element.setAttribute(key, options.attributes[key]);
+        }
+    }
+}
+
+/**
+ * create element
+ * @param {string} elementName 
+ * @param {(number | string)} text 
+ * @returns {HTMLElement}
+ */
+export function createElement(elementName, text) {
+    /** @type {HTMLElement} */
+    const elem = document.createElement(elementName);
+    elem.textContent = text;
+    return elem;
+};

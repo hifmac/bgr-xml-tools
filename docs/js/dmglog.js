@@ -1,11 +1,13 @@
-import { BgrJsonKeyMap, BgrJsonBattleAction } from './bgr/bgr.json.js'
-import { lastElement, concat } from './bgr/bgr.util.js'
-import { Column, Table } from './bgr/bgr.table.js'
+import { BgrJsonKeyMap, BgrJsonBattleAction, BgrJsonHeroJoin } from './bgr/bgr.json.js'
+import { lastElement, concat, updateTooltip } from './bgr/bgr.util.js'
+import { Column, Row, Table } from './bgr/bgr.table.js'
+import { BgrXmlLoader } from './bgr/bgr.xml.js';
 
 /**
  * damage log
  */
 export function DamageLog() {
+    /** @type {BgrXmlLoader} */
     this.__loader = null;
 
     /** @type {HTMLInputElement} */
@@ -51,6 +53,7 @@ DamageLog.prototype.onFileRead = function DamageLog_onFileRead(ev) {
         }
         catch (e) {
             console.log(e);
+            console.log(e.stack);
         }
     }
 
@@ -61,13 +64,16 @@ DamageLog.prototype.onFileRead = function DamageLog_onFileRead(ev) {
         console.log(key, BgrJsonKeyMap.get(key));
     }
 
-    /** @type {Map<number, string>} make uid map */
+    /** @type {Map<number, { name: string, hero: BgrJsonHeroData }>} make uid map */
     const uid_map = new Map();
     for (let baction of bactions) {
         for (let join of baction.heroJoin) {
             for (let hero of join.heroes) {
                 if (!uid_map.has(hero.uid)) {
-                    uid_map.set(hero.uid, this.__loader.getUnitBase(hero.xid).name + '[' + hero.position + ']');
+                    uid_map.set(hero.uid, {
+                        name: this.__loader.getUnitBase(hero.xid).name + '[' + hero.position + ']',
+                        hero,
+                    });
                 }
             }
         }
@@ -81,7 +87,7 @@ DamageLog.prototype.onFileRead = function DamageLog_onFileRead(ev) {
                 if (unit) {
                     const num = xid_map.has(unit.id) ? xid_map.get(unit.id) : 1;
                     xid_map.set(unit.id, num + 1);
-                    uid_map.set(skillact.uid, unit.name + '(' + num + ')');
+                    uid_map.set(skillact.uid, { name: unit.name + '(' + num + ')' });
                 }
             }
         }
@@ -90,11 +96,11 @@ DamageLog.prototype.onFileRead = function DamageLog_onFileRead(ev) {
     for (let baction of bactions) {
         for (let skillact of baction.skillAction) {
             if (!uid_map.has(skillact.uid)) {
-                uid_map.set(skillact.uid, '？？？(' + skillact.uid + ')');
+                uid_map.set(skillact.uid, { name: '？？？(' + skillact.uid + ')' });
             }
             for (let hit of skillact.hits) {
                 if (!uid_map.has(hit.uid)) {
-                    uid_map.set(hit.uid, '？？？(' + hit.uid + ')');
+                    uid_map.set(hit.uid, { name: '？？？(' + hit.uid + ')' });
                 }
             }
         }
@@ -105,18 +111,21 @@ DamageLog.prototype.onFileRead = function DamageLog_onFileRead(ev) {
     for (let baction of bactions) {
         if (baction.updateDamageChallengeRecord.length) {
             const damage = lastElement(baction.updateDamageChallengeRecord).damage;
-            action_map.set(damage, action_map.has(damage) ? action_map.get(damage).merge(baction) : baction);
+            action_map.set(damage, (action_map.has(damage)
+                ? action_map.get(damage).merge(baction)
+                : baction));
         }
     }
 
     this.createDamageLog(action_map, uid_map);
     this.createUnitLog(action_map, uid_map);
+    updateTooltip();
 };
 
 /**
  * create damage log table
  * @param {Map<number, BgrJsonBattleAction>} action_map 
- * @param {Map<number, string>} uid_map
+ * @param {Map<number, { name: string, hero: BgrJsonHeroData }>} uid_map
  */
 DamageLog.prototype.createDamageLog = function DamageLog_createDamageLog(action_map, uid_map) {
     const table = new Table();
@@ -125,48 +134,44 @@ DamageLog.prototype.createDamageLog = function DamageLog_createDamageLog(action_
     table.element = document.getElementById('damage-log-table');
     table.columns = [
         new Column('ダメージ'),
-        new Column('イベント'),
-        new Column('行動ユニット'),
-        new Column('行動'),
-        new Column('内容'),
+        new Column('SP'),
+        new Column('自動出撃'),
+        new Column('自動スキル'),
+        new Column('ユニット'),
+        new Column('スキル'),
+        new Column('アクション'),
     ];
 
 
-    table.objects = [];
+    table.rows = [];
     const damages = Array.from(action_map.keys()).sort((a, b) => a - b);
+    let sp = '?';
+    let isSummonAuto = '?';
+    let isSkillAuto = '?';
     for (let damage of damages) {
-        let noPlayerInfo = true;
         const baction = action_map.get(damage);
-        if (noPlayerInfo && baction.updatePlayerInfo.length) {
-            noPlayerInfo = false;
 
-            /** @type {BgrJsonUpdatePlayerInfo} */
-            const playerInfo = lastElement(baction.updatePlayerInfo);
-            table.objects.push([
-                damage,
-                '状態',
-                '団長',
-                [
-                    'SP：' + playerInfo.sp,
-                    '出撃：' + (playerInfo.isSummonAuto ? '自動' : '手動'),
-                    'スキル：' + (playerInfo.isSkillAuto ? '自動' : '手動'),
-                ].join('\n'),
-                null    
-            ]);
+        if (baction.updatePlayerInfo.length) {
+            const playerInfo = lastElement(lastElement(baction.updatePlayerInfo).playerInfo);
+            sp = playerInfo.sp;
+            isSummonAuto = (playerInfo.isSummonAuto ? 'ON' : 'OFF');
+            isSkillAuto = (playerInfo.isSkillAuto ? 'ON' : 'OFF');
         }
 
         for (let skillact of baction.skillAction) {
-            table.objects.push([
+            table.rows.push(new Row([
                 damage,
-                'スキル',
-                uid_map.get(skillact.uid),
+                sp,
+                isSummonAuto,
+                isSkillAuto,
+                uid_map.get(skillact.uid).name,
                 this.__loader.getSkillBase(skillact.skillId).name,
                 Array.from(skillact.hits, (x) => [
-                    uid_map.get(x.uid),
+                    uid_map.get(x.uid).name,
                     concat('HP：', x.hp, '(', x.hpDiff, ')'),
                     (x.isCritical ? 'クリティカル' : '命中')
                 ].join('/')).join('\n')
-            ]);
+            ]));
         }
     }
 
@@ -176,7 +181,7 @@ DamageLog.prototype.createDamageLog = function DamageLog_createDamageLog(action_
 /**
  * create damage log table
  * @param {Map<number, BgrJsonBattleAction[]>} action_map 
- * @param {Map<number, string>} uid_map
+ * @param {Map<number, { name: string, hero: BgrJsonHeroData }>} uid_map
  */
 DamageLog.prototype.createUnitLog = function DamageLog_createCharacterLog(action_map, uid_map) {
     const data = {};
@@ -239,12 +244,14 @@ DamageLog.prototype.createUnitLog = function DamageLog_createCharacterLog(action
         new Column('回数(CRIT/通常)'),
         new Column('被ダメ'),
         new Column('回数(CRIT/通常)'),
+        new Column('装備'),
+        new Column('バッファ'),
     ];
 
-    table.objects = [];
+    table.rows = [];
     for (let uid of uid_map.keys()) {
-        table.objects.push([
-            uid_map.get(uid),
+        const row = [
+            uid_map.get(uid).name,
             data[uid].take.damage,
             concat(
                 data[uid].take.critical + data[uid].take.hit + data[uid].take.miss,
@@ -253,7 +260,30 @@ DamageLog.prototype.createUnitLog = function DamageLog_createCharacterLog(action
             concat(
                 data[uid].give.critical + data[uid].give.hit,
                 '(', data[uid].give.critical, '/', data[uid].give.hit, ')'),
-        ]);
+        ];
+
+        if (uid_map.get(uid).hero) {
+            const self = this;
+
+            row.push(uid_map.get(uid).hero.equips.map(function (x) {
+                const item = self.__loader.getItem(x.xid);
+                return concat(item.name, ' lv', x.level);
+            }).join('\n'));
+
+            row.push(uid_map.get(uid).hero.buffers.map(function (x) {
+                const buffer = self.__loader.getBufferBase(x.bufferID);
+                if (buffer) {
+                    return x.level ? concat(buffer.name, ' lv', x.level) : buffer.name;
+                }
+                return '';
+            }).join('\n'));
+        }
+        else {
+            row.push('');
+            row.push('');
+        }
+
+        table.rows.push(new Row(row));
     }
 
     table.update();

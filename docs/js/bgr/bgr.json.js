@@ -100,20 +100,22 @@ BgrJsonBattleAction.TYPENAME_MAP = {
 };
 
 /**
- * @param {Object} obj 
- * @param {Object[]} obj.BActionS
+ * load battle action from object
+ * @param {{
+ *     BActionS: Object[]
+ * }} action battle action
  */
-BgrJsonBattleAction.prototype.load = function BgrJsonBattleAction_load(obj) {
-    if (!('BActionS' in obj)) {
+BgrJsonBattleAction.prototype.load = function BgrJsonBattleAction_load(action) {
+    if (!('BActionS' in action)) {
         throw new Error('BActionS not in the Object!');
     }
 
-    for (let action of obj.BActionS) {
-        const typeName = action.typeName;
+    for (let baction of action.BActionS) {
+        const typeName = baction.typeName;
         if (typeName in BgrJsonBattleAction.TYPENAME_MAP) {
             const type = BgrJsonBattleAction.TYPENAME_MAP[typeName];
-            this[type.attrName].push(new type.ctor(action));
-            BgrJsonKeyMap.add(typeName, action);
+            this[type.attrName].push(new type.ctor(baction));
+            BgrJsonKeyMap.add(typeName, baction);
         }
         else {
             console.log(typeName + ' is not handled!');
@@ -136,7 +138,6 @@ BgrJsonBattleAction.prototype.merge = function BgrJsonBattleAction_merge(baction
             }
         }
     }
-    console.log(ret);
     return ret;
 };
 
@@ -149,15 +150,114 @@ export function BgrJsonBattleStart(action) {
 }
 
 /**
+ * BGR JSON equip
+ * @param {{
+ *    lUID: number,
+ *    uXID: number,
+ *    nLevel: number,
+ *    lExp: number,
+ *    lHero: number,
+ *    cSlot: number,
+ *    uFlag: number,
+ *    nOver: number,
+ *    cPartyType: number,
+ * }} equip equip data
+ */
+export function BgrJsonEquipData(equip) {
+    this.uid = equip.lUID;
+    this.xid = equip.uXID;
+    this.level = equip.nLevel;
+    this.exp = equip.lExp;
+    this.slot = equip.cSlot;
+    this.flag = equip.uFlag;
+    this.over = equip.nOver;
+    this.partyType = equip.cPartyType
+}
+
+/**
  * BGR JSON hero data
- * @param {Object} hero
- * @param {number} hero.uXID unit id
- * @param {number} hero.lUID unique id
- * @param {number} hero.nLevel unit level
- * @param {number} hero.uGP the point granted by gift items
- * @param {number} hero.uTP the point granted by the charch
- * @param {number} hero.nHp HP
- * @param {number} hero.cDamageChallengePos damage challenge party position
+ * @param {{
+ *    bLeft: boolean,
+ *    vPos: Object,
+ *    nHp: number,
+ *    dRealHPScale: number,
+ *    nSP: number,
+ *    lPlayerAID: number,
+ *    bDirectLeft: boolean,
+ *    lAddExp: number,
+ *    bMainHero: boolean,
+ *    fSummonCD: number,
+ *    fASkillCD: number,
+ *    nLineIndex: number,
+ *    bASkillCast: boolean,
+ *    bSkillFirstCD: boolean,
+ *    BuffValS: Object[],
+ *    TechAttrS: Object[],
+ *    EquipDataS: Object[],
+ *    cPartyType: number,
+ *    bDelete: boolean,
+ *    lUID: number,
+ *    lAID: number,
+ *    uXID: number,
+ *    nLevel: number,
+ *    pLSkill: number,
+ *    lLevelTime: number,
+ *    lExp: number,
+ *    cParty: number,
+ *    uFlag: number,
+ *    uGP: number,
+ *    uTP: number,
+ *    cPartyPos: number,
+ *    lBID: number,
+ *    cPvpPos: number,
+ *    lHealFinish: number,
+ *    uAdvID: number,
+ *    pEquipRecord: number,
+ *    nLSkillLevel: number,
+ *    lLSkillExp: number,
+ *    nASkillLevel: number,
+ *    lASkillExp: number,
+ *    cFriendPos: number,
+ *    cExpeditionParty: number,
+ *    cExpeditionPos: number,
+ *    cInfiniteParty: number,
+ *    cInfinitePos: number,
+ *    pInfiniteStageList: number,
+ *    nOver: number,
+ *    pAwakeInfo: number,
+ *    cContinuousParty: number,
+ *    cContinuousPos: number,
+ *    cCountParty: number,
+ *    cCountPos: number,
+ *    cDamageChallengeParty: number,
+ *    cDamageChallengePos: number,
+ *    cEventDamageChallengeParty: number,
+ *    cEventDamageChallengePos: number,
+ *    cOld: number,
+ *    pHTXID: number,
+ *    lHTAID: number,
+ *    cHTHouse: number,
+ *    lHTFinish: number,
+ *    InfiniteStagelistS: Object[],
+ *    uHTXIDs: number,
+ *    IsFailHouseTrip: boolean,
+ *    bAwaken: boolean,
+ *    IsMain: boolean,
+ *    Marry: boolean,
+ *    bHalloWeen: boolean,
+ *    bXmas: boolean,
+ *    bNewYear: boolean,
+ *    bValentine: boolean,
+ *    bWhiteDay: boolean,
+ *    bSpring: boolean,
+ *    bKodomo: boolean,
+ *    bWedding: boolean,
+ *    bSummer: boolean,
+ *    bNatumaturi: boolean,
+ *    bFall: boolean,
+ *    bWinter: boolean,
+ *    uDB_LSkillS: number,
+ * }} hero hero data object
  */
 export function BgrJsonHeroData(hero) {
     this.xid = hero.uXID;
@@ -167,12 +267,19 @@ export function BgrJsonHeroData(hero) {
     this.tp = hero.uTP;
     this.hp = hero.nHp;
     this.position = hero.cDamageChallengePos;
+    this.equips = Array.from(hero.EquipDataS, (x) => new BgrJsonEquipData(x));
+    this.buffers = Array.from(hero.BuffValS, (x) => new BgrJsonBufferValue(x));
+
+    BgrJsonKeyMap.add('EquipDataS', hero.EquipDataS);
+    BgrJsonKeyMap.add('BuffValS', hero.BuffValS);
+    BgrJsonKeyMap.add('TechAttrS', hero.TechAttrS);
 };
 
 /**
  * BGR JSON hero join
- * @param {Object} action hero join event
- * @param {Object[]} action.CHeroDataS hero data list
+ * @param {{
+ *     CHeroDataS: Object[]
+ * }} action hero join event
  */
 export function BgrJsonHeroJoin(action) {
     if (!('CHeroDataS' in action)) {
@@ -185,10 +292,11 @@ export function BgrJsonHeroJoin(action) {
 
 /**
  * BGR JSON hero move
- * @param {Object} action 
- * @param {number} action.lUID
- * @param {Object} action.vPos
- * @param {boolean} action.bDirectLeft
+ * @param {{
+ *     lUID: number,
+ *     vPos: Object,
+ *     bDirectLeft: boolean,
+ * }} action hero move action
  */
 export function BgrJsonHeroMove(action) {
     this.uid = action.lUID;
@@ -198,35 +306,46 @@ export function BgrJsonHeroMove(action) {
 
 /**
  * BGR JSON skill hit included by BgrJsonSkillAction
- * @param {Object} hit
- * @param {number} hit.lUID
- * @param {number} hit.nHP
- * @param {number} hit.nHPVal
- * @param {boolean} hit.bCrit
- * @param {Object[]} hit.buffers
+ * @param {{
+ *     lUID: number,
+ *     nHP: number,
+ *     nHPVal: number,
+ *     bCrit: boolean,
+ *     nSP: number,
+ *     nSPVal: number,
+ *     bBuff: boolean,
+ *     BuffValS: Object[],
+ *     cAtkResult: number,
+ *     bNoShowSkillPic: boolean,
+ * }} hit skill hit
  */
 export function BgrJsonSkillHit(hit) {
     this.uid = hit.lUID;
     this.hp = hit.nHP;
     this.hpDiff = hit.nHPVal
     this.isCritical = hit.bCrit;
-    this.buffers = [];
+    this.isBuffer = hit.bBuff;
+    this.buffers = Array.from(hit.BuffValS, (x) => new BgrJsonBufferValue(x));
+
+    BgrJsonKeyMap.add('BuffValS', hit.BuffValS);
 }
 
 /**
  * BGR JSON skill action
- * @param {Object} obj skill action
- * @param {Object} obj.aBSkillAct skill action attribute
- * @param {number} obj.aBSkillAct.lUID unique id
- * @param {number} obj.aBSkillAct.uSkillID skill id
- * @param {Object[]} obj.aBSkillAct.BSkillHitS hit events
+ * @param {{
+ *     aBSkillAct: {
+ *         lUID: number,
+ *         uSkillID: number,
+ *         BSkillHitS: Object[],
+ *     }
+ * }} action skill action
  */
-export function BgrJsonSkillAction(obj) {
-    if (!('aBSkillAct' in obj)) {
+export function BgrJsonSkillAction(action) {
+    if (!('aBSkillAct' in action)) {
         throw new Error('aBSkillAct is not in Object!');
     }
 
-    const skillact = obj.aBSkillAct;
+    const skillact = action.aBSkillAct;
     this.uid= skillact.lUID;
     this.skillId = skillact.uSkillID;
     this.hits = Array.from(skillact.BSkillHitS, (hit) => new BgrJsonSkillHit(hit));
@@ -236,16 +355,20 @@ export function BgrJsonSkillAction(obj) {
 }
 
 /**
- * @param {Object} action
- * @param {number} action.lBattileEndTime estimated battle end time
+ * BGR JSON update battle end time
+ * @param {{
+ *     lBattileEndTime: number,
+ * }} action update battle end time action
  */
 export function BgrJsonUpdateBattleEndTime(action) {
     this.battleEndTime = action.lBattileEndTime;
 }
 
 /**
- * @param {Object} action
- * @param {number} action.lTotalDamageCauseByLeft the total damage of a damage challenge battle
+ * BGR JSON update damage challenge record
+ * @param {{
+ *     lTotalDamageCauseByLeft: number
+ * }} action update damage challenge record action
  */
 export function BgrJsonUpdateDamageChallengeRecord(action) {
     this.damage = action.lTotalDamageCauseByLeft;
@@ -253,14 +376,15 @@ export function BgrJsonUpdateDamageChallengeRecord(action) {
 
 /**
  * BGR JSON buffer value
- * @param {Object} buffer
- * @param {number} buffer.uBuffID
- * @param {number} buffer.fDurTime
- * @param {boolean} buffer.bPassive
- * @param {number} buffer.nLevel
- * @param {number} buffer.nTimes
- * @param {number} buffer.fTerrorScale
- * @param {number} buffer.fTerrorAdd
+ * @param {{
+ *     uBuffID: number,
+ *     fDurTime: number,
+ *     bPassive: boolean,
+ *     nLevel: number,
+ *     nTimes: number,
+ *     fTerrorScale: number,
+ *     fTerrorAdd: number,
+ * }} buffer buffer value action
  */
 export function BgrJsonBufferValue(buffer) {
     this.bufferID = buffer.uBuffID;
@@ -274,10 +398,11 @@ export function BgrJsonBufferValue(buffer) {
 
 /**
  * BGR JSON hero buffer
- * @param {Object} action 
- * @param {number} action.lUID
- * @param {Object[]} action.BuffValS
- * @param {boolean} action.bClearDebuff
+ * @param {{
+ *     lUID: number,
+ *     BuffValS: Object[],
+ *     bClearDebuff: boolean
+ * }} action hero buffer action
  */
 export function BgrJsonUpdateHeroBuffer(action) {
     if (!('BuffValS' in action)) {
@@ -292,7 +417,11 @@ export function BgrJsonUpdateHeroBuffer(action) {
 
 /**
  * BGR JSON update hero hp sp
- * @param {Object} action update hero hp sp
+ * @param {{
+ *     lUID: number,
+ *     nHP: number,
+ *     nHPVal: number,
+ * }} action update hero hp sp action
  */
 export function BgrJsonUpdateHeroHpSp (action) {
     this.uid = action.lUID;
@@ -302,37 +431,61 @@ export function BgrJsonUpdateHeroHpSp (action) {
 
 /**
  * BGR JSON line index
- * @param {Object} action 
- * @param {number} action.nIndex line index to move
+ * @param {{
+ *     nIndex: number
+ * }} action 
  */
 export function BgrJsonUpdateLineIndex(action) {
     this.index = action.nIndex;
 }
 
 /**
+ * BGR JSON player info
+ * @param {{
+ *     lAID: number,
+ *     fSP: number,
+ *     nPickCnt: number,
+ *     nSupport: number,
+ *     bSummonAuto: boolean,
+ *     nSPLevel: number,
+ *     bSkillAuto: boolean,
+ *     fEquipSkillCD: number,
+ *     uEquipSkill: number,
+ *     nEquipLevel: number,
+ *     fEquipSkillCastTime: number,
+ *     bEquipCasting: boolean,
+ *     fLeftTimeStop: number,
+ *     fRightTimeStop: number,
+ *     nBP: number,
+ *     nMoney: number,
+ * }} playerInfo player info
+ */
+export function BgrJsonPlayerInfo(playerInfo) {
+    this.sp = playerInfo.fSP;
+    this.isSummonAuto = playerInfo.bSummonAuto;
+    this.isSkillAuto = playerInfo.bSkillAuto;
+}
+
+/**
  * BGR JSON update player info
- * @param {Object} action 
- * @param {number} action.fSP current SP
- * @param {boolean} bSummonAuto whether auto unit summon is enabled
- * @param {boolean} bSkillAuto  whether auto skinn use is enabled
+ * @param {{
+ *     BattlePlayerInfoS: Object[]
+ * }} action update player info event
  */
 export function BgrJsonUpdatePlayerInfo(action) {
     if (!('BattlePlayerInfoS' in action)) {
         throw new Error('BattlePlayerInfoS is not in Object!');
     }
 
-    for (let info of action.BattlePlayerInfoS) {
-        this.sp = info.fSP;
-        this.isSummonAuto = info.bSummonAuto;
-        this.isSkillAuto = info.bSkillAuto;
-    }
+    this.playerInfo = Array.from(action.BattlePlayerInfoS, (x) => new BgrJsonPlayerInfo(x));
     BgrJsonKeyMap.add('BattlePlayerInfoS', action.BattlePlayerInfoS);
 }
 
 /**
  * BGR JSON on cast skill
- * @param {Object} action 
- * @param {number} action.lUID unit id
+ * @param {{
+ *     lUID: number
+ * }} action cast skill action
  */
 export function BgrJsonOnCastSkill(action) {
     this.uid = action.lUID;
@@ -340,11 +493,12 @@ export function BgrJsonOnCastSkill(action) {
 
 /**
  * BGR JSON normal casting skill
- * @param {Object} action 
- * @param {number} action.lUID unit id
- * @param {number} action.fCastTime cast time to use
- * @param {number} action.fCD cooldown to cast next
- * @param {boolean} action.bFirstCD is first cooldown or not
+ * @param {{
+ *     lUID: number,
+ *     fCastTime: number,
+ *     fCD: number,
+ *     bFirstCD: boolean
+ * }} action normal casting skill action
  */
 export function BgrJsonOnNormalCastingSkill(action) {
     this.uid = action.lUID;
@@ -354,13 +508,14 @@ export function BgrJsonOnNormalCastingSkill(action) {
 }
 
 /**
- * BGR JSON normal casting skill
- * @param {Object} action 
- * @param {number} action.lUID unit id
- * @param {number} action.fCastTime cast time to use
- * @param {number} action.fCD cooldown to cast next
- * @param {boolean} action.bFirstCD is first cooldown or not
- * @param {Object} action.vPos
+ * BGR JSON area casting skill
+ * @param {{
+ *     lUID: number,
+ *     fCastTime: number,
+ *     fCD: number,
+ *     bFirstCD: boolean,
+ *     vPos: Object,
+ * }} action area casting skill action
  */
 export function BgrJsonJsonOnAreaCastingSkill(action) {
     this.uid = action.lUID;
@@ -372,8 +527,9 @@ export function BgrJsonJsonOnAreaCastingSkill(action) {
 
 /**
  * BGR JSON off cast skill
- * @param {Object} action 
- * @param {number} action.lUID unit id
+ * @param {{
+ *     lUID: number
+ * }} action off cast skill action
  */
 export function BgrJsonOffCastSkill(action) {
     this.uid = action.lUID;
@@ -381,8 +537,9 @@ export function BgrJsonOffCastSkill(action) {
 
 /**
  * BGR JSON off casting skill
- * @param {Object} action 
- * @param {number} action.lUID unit id
+ * @param {{
+ *     lUID: number
+ * }} action off casting skill action
  */
 export function BgrJsonOffCastingSkill(action) {
     this.uid = action.lUID;
