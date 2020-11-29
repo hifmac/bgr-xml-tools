@@ -1,6 +1,6 @@
-import { BgrJsonBattleAction, BgrJsonHeroJoin } from './bgr/bgr.json.js'
-import { lastElement, clearChild, createHeader, createRow } from './bgr/bgr.util.js'
-import { BgrXmlUnitBase } from './bgr/bgr.xml.js';
+import { BgrJsonKeyMap, BgrJsonBattleAction } from './bgr/bgr.json.js'
+import { lastElement, concat } from './bgr/bgr.util.js'
+import { Column, Table } from './bgr/bgr.table.js'
 
 /**
  * damage log
@@ -45,11 +45,20 @@ DamageLog.prototype.onFileRead = function DamageLog_onFileRead(ev) {
     const bactions = [];
     for (let json of ev.target.result.split('\n')) {
         try {
-            bactions.push(new BgrJsonBattleAction(JSON.parse(json)));
+            const baction = new BgrJsonBattleAction();
+            baction.load(JSON.parse(json));
+            bactions.push(baction);
         }
         catch (e) {
             console.log(e);
         }
+    }
+
+    /*
+     * print JSON key mapping for debug
+     */
+    for (let key of BgrJsonKeyMap.keys()) {
+        console.log(key, BgrJsonKeyMap.get(key));
     }
 
     /** @type {Map<number, string>} make uid map */
@@ -96,14 +105,11 @@ DamageLog.prototype.onFileRead = function DamageLog_onFileRead(ev) {
     for (let baction of bactions) {
         if (baction.updateDamageChallengeRecord.length) {
             const damage = lastElement(baction.updateDamageChallengeRecord).damage;
-            if (!action_map.has(damage)) {
-                action_map.set(damage, baction);
-            }
+            action_map.set(damage, action_map.has(damage) ? action_map.get(damage).merge(baction) : baction);
         }
     }
 
     this.createDamageLog(action_map, uid_map);
-
     this.createUnitLog(action_map, uid_map);
 };
 
@@ -113,22 +119,30 @@ DamageLog.prototype.onFileRead = function DamageLog_onFileRead(ev) {
  * @param {Map<number, string>} uid_map
  */
 DamageLog.prototype.createDamageLog = function DamageLog_createDamageLog(action_map, uid_map) {
+    const table = new Table();
+
     /** @type {HTMLTableElement} */
-    const logTable = document.getElementById('damage-log-table');
+    table.element = document.getElementById('damage-log-table');
+    table.columns = [
+        new Column('ダメージ'),
+        new Column('イベント'),
+        new Column('行動ユニット'),
+        new Column('行動'),
+        new Column('内容'),
+    ];
 
-    clearChild(logTable);
 
-    logTable.appendChild(createHeader(['ダメージ', 'イベント', '行動ユニット', '行動', '内容']));
-
-    const tbody = document.createElement('tbody');
+    table.objects = [];
     const damages = Array.from(action_map.keys()).sort((a, b) => a - b);
     for (let damage of damages) {
+        let noPlayerInfo = true;
         const baction = action_map.get(damage);
+        if (noPlayerInfo && baction.updatePlayerInfo.length) {
+            noPlayerInfo = false;
 
-        if (baction.updatePlayerInfo.length) {
             /** @type {BgrJsonUpdatePlayerInfo} */
             const playerInfo = lastElement(baction.updatePlayerInfo);
-            tbody.appendChild(createRow([
+            table.objects.push([
                 damage,
                 '状態',
                 '団長',
@@ -137,31 +151,31 @@ DamageLog.prototype.createDamageLog = function DamageLog_createDamageLog(action_
                     '出撃：' + (playerInfo.isSummonAuto ? '自動' : '手動'),
                     'スキル：' + (playerInfo.isSkillAuto ? '自動' : '手動'),
                 ].join('\n'),
-                null
-            ]));
+                null    
+            ]);
         }
 
         for (let skillact of baction.skillAction) {
-            tbody.appendChild(createRow([
+            table.objects.push([
                 damage,
                 'スキル',
                 uid_map.get(skillact.uid),
                 this.__loader.getSkillBase(skillact.skillId).name,
-                skillact.hits.map((x) => [
+                Array.from(skillact.hits, (x) => [
                     uid_map.get(x.uid),
-                    'HP：' + x.hp + '(' + x.hpDiff + ')',
+                    concat('HP：', x.hp, '(', x.hpDiff, ')'),
                     (x.isCritical ? 'クリティカル' : '命中')
                 ].join('/')).join('\n')
-            ]));
+            ]);
         }
     }
 
-    logTable.appendChild(tbody);
+    table.update();
 }
 
 /**
  * create damage log table
- * @param {Map<number, BgrJsonBattleAction>} action_map 
+ * @param {Map<number, BgrJsonBattleAction[]>} action_map 
  * @param {Map<number, string>} uid_map
  */
 DamageLog.prototype.createUnitLog = function DamageLog_createCharacterLog(action_map, uid_map) {
@@ -216,27 +230,33 @@ DamageLog.prototype.createUnitLog = function DamageLog_createCharacterLog(action
         }
     }
 
-    /** @type {HTMLTableElement} */
-    const unitlogTable = document.getElementById('damage-log-per-unit-table');
+    const table = new Table();
+    table.element = document.getElementById('damage-log-per-unit-table');
 
-    clearChild(unitlogTable);
+    table.columns = [
+        new Column('ユニット'),
+        new Column('与ダメ'),
+        new Column('回数(CRIT/通常)'),
+        new Column('被ダメ'),
+        new Column('回数(CRIT/通常)'),
+    ];
 
-    unitlogTable.appendChild(createHeader(['名前', '与ダメ', '回数(CRIT/通常)', '被ダメ', '回数(CRIT/通常)']));
-
-    const tbody = document.createElement('tbody');
+    table.objects = [];
     for (let uid of uid_map.keys()) {
-        if (data[uid].take.damage || data[uid].take.hit || data[uid].take.critical) {
-            tbody.appendChild(createRow([
-                uid_map.get(uid),
-                data[uid].take.damage,
-                (data[uid].take.critical + data[uid].take.hit + data[uid].take.miss) + '(' + data[uid].take.critical + '/' + data[uid].take.hit + '/' + data[uid].take.miss + ')',
-                data[uid].give.damage,
-                (data[uid].give.critical + data[uid].give.hit) + '(' + data[uid].give.critical + '/' + data[uid].give.hit + ')',
-            ]));
-        }
+        table.objects.push([
+            uid_map.get(uid),
+            data[uid].take.damage,
+            concat(
+                data[uid].take.critical + data[uid].take.hit + data[uid].take.miss,
+                '(', data[uid].take.critical, '/', data[uid].take.hit, '/', data[uid].take.miss, ')'),
+            data[uid].give.damage,
+            concat(
+                data[uid].give.critical + data[uid].give.hit,
+                '(', data[uid].give.critical, '/', data[uid].give.hit, ')'),
+        ]);
     }
 
-    unitlogTable.appendChild(tbody);
+    table.update();
 }
 
 /**

@@ -1,32 +1,11 @@
-
+/**
+ * remove all children from an element
+ * @param {HTMLElement} elem 
+ */
 export function clearChild(elem) {
     while (elem.firstChild) {
         elem.removeChild(elem.firstChild);
     }    
-}
-
-export function createHeader(columns) {
-    const thead = document.createElement('thead');
-    thead.setAttribute('class', 'thead-dark');
-    const tr = document.createElement('tr');
-    for (let col of columns) {
-        const th = document.createElement('th');
-        th.textContent = col;
-        tr.appendChild(th);
-    }
-    thead.append(tr);
-    return thead;
-}
-
-export function createRow(columns) {
-    const tr = document.createElement('tr');
-    for (let col of columns) {
-        const td = document.createElement('td');
-        td.style.whiteSpace = 'pre-wrap';
-        td.textContent = col;
-        tr.appendChild(td);
-    }
-    return tr;
 }
 
 /**
@@ -41,8 +20,8 @@ export function lastElement(arr) {
 /**
  * 
  * @param {File} file 
- * @param {function(ProgessEvent<FileReader>): void} onload 
- * @param {function(ProgessEvent<FileReader>): void} onerror 
+ * @param {function(ProgressEvent<FileReader>): void} onload 
+ * @param {function(ProgressEvent<FileReader>): void} onerror 
  */
 export function readFile(file, onload, onerror) {
     const xmlreader = new FileReader();
@@ -50,3 +29,55 @@ export function readFile(file, onload, onerror) {
     xmlreader.onerror = onerror;
     xmlreader.readAsText(file, 'UTF-8');
 }
+
+/**
+ * concatanates all arguments
+ */
+export function concat() {
+    return Array.from(arguments).join('');
+}
+
+
+export function compareAsc(a, b) {
+    if (a > b) {
+        return 1;
+    }
+    else if (a < b) {
+        return -1;
+    }
+    return 0;
+}
+
+export function compareDesc(a, b) {
+    if (a < b) {
+        return 1;
+    }
+    else if (a > b) {
+        return -1;
+    }
+    return 0;
+}
+
+/**
+ * compare 2 objects shallow
+ * @param {Object} a 
+ * @param {Object} b 
+ * @returns {boolean} whether 2 objects look same or not
+ */
+export function compareDeep(a, b) {
+    const aKeys = Object.keys(a);
+    if (aKeys.length != Object.keys(b).length) {
+        return false;
+    }
+
+    for (let key of aKeys) {
+        if (a[key] !== b[key]) {
+            if (typeof a[key] !== 'object' || typeof b[key] !== 'object' || !compareDeep(a[key], b[key])) {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
