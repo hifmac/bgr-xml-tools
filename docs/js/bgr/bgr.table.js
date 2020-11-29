@@ -102,6 +102,7 @@ Table.prototype.sortDescending = false;
 Table.prototype.update = function Table_update() {
     if (this.columns && this.objects && this.element) {
         clearChild(this.element);
+        this.element.classList.add('table-prewrap');
         this.element.appendChild(this.createHeader());
         this.element.appendChild(this.createBody());
     }
