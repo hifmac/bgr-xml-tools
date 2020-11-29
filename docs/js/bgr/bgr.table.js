@@ -158,14 +158,12 @@ Table.prototype.createBody = function Table_createBody() {
 
     /** @type {HTMLTableSectionElement} */
     const tbody = document.createElement('tbody');
-    console.log(this.rows);
     for (let row of this.rows) {
         /** @type {HTMLTableRowElement} */
         const tr = document.createElement('tr');
         if (row.options) {
             updateElement(tr, row.options);
         }
-        console.log(tr, row);
         for (let i in row.cells) {
             if (this.columns[i].isEnabled) {
                 tr.append(createElement('td', this.columns[i].string(row.cells[i])));
