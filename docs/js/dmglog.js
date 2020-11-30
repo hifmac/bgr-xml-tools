@@ -1,5 +1,5 @@
 import { BgrJsonKeyMap, BgrJsonBattleAction, BgrJsonHeroJoin } from './bgr/bgr.json.js'
-import { lastElement, concat, updateTooltip } from './bgr/bgr.util.js'
+import { lastElement, concat, updateTooltip, convertServerTimeToDate } from './bgr/bgr.util.js'
 import { Column, Row, Table } from './bgr/bgr.table.js'
 import { BgrXmlLoader } from './bgr/bgr.xml.js';
 
@@ -117,10 +117,29 @@ DamageLog.prototype.onFileRead = function DamageLog_onFileRead(ev) {
         }
     }
 
+    this.setLogDatetime(bactions);
     this.createDamageLog(action_map, uid_map);
     this.createUnitLog(action_map, uid_map);
     updateTooltip();
 };
+
+/**
+ * set log file datetime
+ * @param {BgrJsonBattleAction[]} bactions 
+ */
+DamageLog.prototype.setLogDatetime = function DamageLog_setLogDatetime(bactions) {
+    let battleEndTime = 0;
+    for (let baction of bactions) {
+        for (let endTime of baction.updateBattleEndTime) {
+            battleEndTime = Math.max(battleEndTime, endTime.battleEndTime);
+        }
+    }
+    const serverEndDate = convertServerTimeToDate(battleEndTime);
+    const serverStartDate = new Date(serverEndDate);
+    serverStartDate.setMinutes(serverStartDate.getMinutes() - 1);
+    document.getElementById('log-datetime').textContent =
+        concat(serverStartDate.toLocaleString(), '～',  serverEndDate.toLocaleString());
+}
 
 /**
  * create damage log table
@@ -141,7 +160,6 @@ DamageLog.prototype.createDamageLog = function DamageLog_createDamageLog(action_
         new Column('スキル'),
         new Column('アクション'),
     ];
-
 
     table.rows = [];
     const damages = Array.from(action_map.keys()).sort((a, b) => a - b);

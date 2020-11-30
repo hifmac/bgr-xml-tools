@@ -115,11 +115,11 @@ BgrJsonBattleAction.prototype.load = function BgrJsonBattleAction_load(action) {
         if (typeName in BgrJsonBattleAction.TYPENAME_MAP) {
             const type = BgrJsonBattleAction.TYPENAME_MAP[typeName];
             this[type.attrName].push(new type.ctor(baction));
-            BgrJsonKeyMap.add(typeName, baction);
         }
         else {
             console.log(typeName + ' is not handled!');
         }
+        BgrJsonKeyMap.add(typeName, baction);
     }
 };
 
@@ -357,11 +357,11 @@ export function BgrJsonSkillAction(action) {
 /**
  * BGR JSON update battle end time
  * @param {{
- *     lBattileEndTime: number,
+ *     lBattleEndTime: number,
  * }} action update battle end time action
  */
 export function BgrJsonUpdateBattleEndTime(action) {
-    this.battleEndTime = action.lBattileEndTime;
+    this.battleEndTime = action.lBattleEndTime;
 }
 
 /**

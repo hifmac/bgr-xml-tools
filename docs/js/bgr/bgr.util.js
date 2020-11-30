@@ -153,4 +153,17 @@ export function createElement(elementName, text) {
     const elem = document.createElement(elementName);
     elem.textContent = text;
     return elem;
-};
+}
+
+/**
+ * convert BGR server time to Date class
+ * @param {number} serverTime BGR server time
+ * @returns {Date} date
+ */
+export function convertServerTimeToDate(serverTime) {
+    /**
+     * maybe the seconds from year 1 to 1970
+     */
+    const OFFSET = 62135629207000;
+    return new Date(serverTime / 10000 - OFFSET);
+}

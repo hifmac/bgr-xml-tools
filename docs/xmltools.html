@@ -27,6 +27,9 @@
                 <li class="nav-item">
                     <a href="#damage-log" data-toggle="list" class="nav-link active show">ダメージログ</a>
                 </li>
+                <li class="nav-item">
+                    <a href="#data-list" data-toggle="list" class="nav-link">各種データ</a>
+                </li>
             </ul>
 
             <div class="tab-content">
@@ -35,6 +38,7 @@
                         <input type="file" class="custom-file-input" id="damage-log-file">
                         <label class="custom-file-label" for="damage-log-file" id="damage-log-file-label">ログファイル</label>
                     </div>
+    
                     <div class="mb-2">
                         <button class="btn btn-primary mb-2"
                             data-toggle="collapse"
@@ -47,12 +51,20 @@
                             aria-expand="true"
                             aria-controls="damage-log-table-collapse">ダメージログ</button>
                     </div>
+
+                    <div class="mb-2" id="log-datetime"></div>
+
                     <div class="collapse mb-2" id="damage-log-per-unit-table-collapse">
                         <table class="table table-hover table-striped table-bordered" id="damage-log-per-unit-table"></table>
                     </div>
+
                     <div class="collapse mb-2 show" id="damage-log-table-collapse">
                         <table class="table table-hover table-striped table-bordered" id="damage-log-table"></table>
                     </div>
+                </div>
+
+                <div class="tab-pane fade p-2" id="data-list">
+                    工事中
                 </div>
             </div>
 
