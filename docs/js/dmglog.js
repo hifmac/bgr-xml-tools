@@ -263,7 +263,7 @@ DamageLog.prototype.createUnitLog = function DamageLog_createCharacterLog(action
         new Column('被ダメ'),
         new Column('回数(CRIT/通常)'),
         new Column('装備'),
-        new Column('バッファ'),
+        new Column('バフ'),
     ];
 
     table.rows = [];

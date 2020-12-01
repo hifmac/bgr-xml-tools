@@ -120,24 +120,24 @@ export const updateTooltip = (function() {
  *     styles: Object,
  *     classes: string[],
  *     attributes: Object,
- * }} options 
+ * }} properties 
  */
-export function updateElement(element, options) {
-    if (options.styles) {
-        for (let key of Object.keys(options.styles)) {
-            element.style[key] = options.styles[key];
+export function updateElement(element, properties) {
+    if (properties.styles) {
+        for (let key of Object.keys(properties.styles)) {
+            element.style[key] = properties.styles[key];
         }        
     }
 
-    if (options.classes) {
-        for (let cls of options.classes) {
+    if (properties.classes) {
+        for (let cls of properties.classes) {
             element.classList.add(cls);
         }
     }
 
-    if (options.attributes) {
-        for (let key of Object.keys(options.attributes)) {
-            element.setAttribute(key, options.attributes[key]);
+    if (properties.attributes) {
+        for (let key of Object.keys(properties.attributes)) {
+            element.setAttribute(key, properties.attributes[key]);
         }
     }
 }
@@ -166,4 +166,72 @@ export function convertServerTimeToDate(serverTime) {
      */
     const OFFSET = 62135629207000;
     return new Date(serverTime / 10000 - OFFSET);
+}
+
+/**
+ * inline form checkbox
+ * @param {string} id 
+ * @param {string} text
+ * @param {boolean} checked
+ */
+export function Checkbox(id, text, checked) {
+    /**
+     * @type {HTMLInputElement}
+     */
+    this.input = document.createElement('input');
+    this.input.id = id;
+    this.input.classList.add('form-check-input');
+    this.input.setAttribute('type', 'checkbox');
+    this.input.checked = typeof checked === 'undefined' ? true : checked;
+
+    /**
+     * @type {HTMLLabelElement}
+     */
+    this.label =document.createElement('label');
+    this.label.classList.add('form-check-label');
+    this.label.classList.add('mr-2');
+    this.label.setAttribute('for', id);
+    this.label.textContent = text;
+
+    /**
+     * @type {HTMLDivElement}
+     */
+    this.div = document.createElement('div');
+    this.div.classList.add('form-check');
+    this.div.classList.add('form-check-inline');
+    this.div.appendChild(input);
+    this.div.appendChild(label);
+}
+
+/**
+ * inline form textbox
+ * @param {string} id 
+ * @param {string} text
+ */
+export function Textbox(id, text) {
+    /**
+     * @type {HTMLInputElement}
+     */
+    this.input = document.createElement('input');
+    this.input.id = id;
+    this.input.classList.add('form-control');
+    this.input.classList.add('mr-2');
+    this.input.setAttribute('type', 'text');
+    this.input.setAttribute('placeholder', text);
+    this.input.checked = true;
+
+    /**
+     * @type {HTMLLabelElement}
+     */
+    this.label = document.createElement('label');
+    this.label.setAttribute('for', id);
+    this.label.textContent = text + "：";
+
+    /**
+     * @type {HTMLDivElement}
+     */
+    this.div = document.createElement('div');
+    this.div.classList.add('form-group');
+    this.div.appendChild(label);
+    this.div.appendChild(input);
 }

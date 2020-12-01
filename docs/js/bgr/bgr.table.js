@@ -52,11 +52,11 @@ Column.prototype.string = function Column_string(value) {
  *     styles: Object,
  *     classes: string[],
  *     attributes: Object,
- * }} options 
+ * }} properties 
  */
-export function Row(cells, options) {
+export function Row(cells, properties) {
     this.cells = cells;
-    this.options = options;
+    this.properties = properties;
 }
 
 /** @type {(number | string)[]} */
@@ -69,7 +69,7 @@ Row.prototype.cells = null;
  *     attributes: Object,
  * }}
  */
-Row.prototype.options = null;
+Row.prototype.properties = null;
 
 export function Table() {
 }
@@ -161,8 +161,8 @@ Table.prototype.createBody = function Table_createBody() {
     for (let row of this.rows) {
         /** @type {HTMLTableRowElement} */
         const tr = document.createElement('tr');
-        if (row.options) {
-            updateElement(tr, row.options);
+        if (row.properties) {
+            updateElement(tr, row.properties);
         }
         for (let i in row.cells) {
             if (this.columns[i].isEnabled) {
