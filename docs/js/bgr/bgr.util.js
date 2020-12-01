@@ -199,8 +199,8 @@ export function Checkbox(id, text, checked) {
     this.div = document.createElement('div');
     this.div.classList.add('form-check');
     this.div.classList.add('form-check-inline');
-    this.div.appendChild(input);
-    this.div.appendChild(label);
+    this.div.appendChild(this.input);
+    this.div.appendChild(this.label);
 }
 
 /**
@@ -232,6 +232,6 @@ export function Textbox(id, text) {
      */
     this.div = document.createElement('div');
     this.div.classList.add('form-group');
-    this.div.appendChild(label);
-    this.div.appendChild(input);
+    this.div.appendChild(this.label);
+    this.div.appendChild(this.input);
 }
