@@ -62,6 +62,16 @@ BgrXmlLoader.prototype.loadXml = function BgrXmlLoader_loadXml(xml) {
     return false;
 }
 
+/**
+ * call functor for each unit
+ * @param {function(BgrXmlUnitBase): void} f functor
+ */
+BgrXmlLoader.prototype.forEachUnitBase = function BgrXmlLoader_forEachUnitBase(f) {
+    for (let key of this.__unitBaseMap.keys()) {
+        f(this.__unitBaseMap.get(key));
+    }
+}
+
 BgrXmlLoader.prototype.getUnitBase = function BgrXmlLoader_getUnitBase(unitId) {
     return this.__unitBaseMap.get(String(unitId));
 }

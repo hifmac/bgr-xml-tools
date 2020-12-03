@@ -168,6 +168,23 @@ export function convertServerTimeToDate(serverTime) {
     return new Date(serverTime / 10000 - OFFSET);
 }
 
+export function rankNumber2String(ranknum) {
+    switch(ranknum) {
+    case 1:
+        return 'N';
+    case 2:
+        return 'R';
+    case 3:
+        return 'SR';
+    case 4:
+        return 'SSR';
+    case 5:
+        return 'UR';
+    default:
+        return '不明';
+    }
+}
+
 /**
  * inline form checkbox
  * @param {string} id 

@@ -28,7 +28,7 @@
                     <a href="#damage-log" data-toggle="list" class="nav-link active show">ダメージログ</a>
                 </li>
                 <li class="nav-item">
-                    <a href="#data-list" data-toggle="list" class="nav-link">各種データ</a>
+                    <a href="#data-browser" data-toggle="list" class="nav-link">各種データ</a>
                 </li>
             </ul>
 
@@ -63,8 +63,23 @@
                     </div>
                 </div>
 
-                <div class="tab-pane fade p-2" id="data-list">
-                    工事中
+                <div class="tab-pane fade p-2" id="data-browser">
+                    <div class="form-group form-inline mb-2">
+                        <label for="data-browser-type">種類：</label>
+                        <select class="form-control" id="data-browser-type">
+                            <option value="none">--</option>
+                            <option value="unit">ユニット</option>
+                            <option value="equip">装備</option>
+                            <option value="skill">スキル</option>
+                            <option value="buffer">バフ</option>
+                            <option value="item">アイテム</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <table class="table table-hover table-striped table-bordered" id="data-browser-table"></table>
+                    </div>
+
                 </div>
             </div>
 

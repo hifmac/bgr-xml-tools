@@ -2,9 +2,11 @@
 import { BgrXmlLoader } from './bgr/bgr.xml.js'
 import { readFile } from './bgr/bgr.util.js'
 import { DamageLog } from './dmglog.js'
+import { DataBrowser } from './databrowser.js'
 
 onload = function() {
     const dmglog = new DamageLog();
+    const databrowser = new DataBrowser();
 
     /** @type {HTMLInputElement} */
     const xmlFile = document.getElementById('xml-file');
@@ -19,6 +21,7 @@ onload = function() {
                 if (loader.loadXml(ev.target.result)) {
                     xmlFileLabel.textContent = file.name;
                     dmglog.setLoader(loader);
+                    databrowser.setLoader(loader);
                 }
                 else {
                     xmlFileLabel.textContent = 'ファイルが間違っているか壊れています';
