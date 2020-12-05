@@ -1,6 +1,13 @@
+/**
+ * @file dmglog.js
+ * @author hifmac(E32456 of the Frea server)
+ * @copyright (c) 2020 hifmac
+ * @license MIT-License
+ */
+
 import { BgrJsonKeyMap, BgrJsonBattleAction, BgrJsonHeroJoin } from './bgr/bgr.json.js'
 import { lastElement, concat, updateTooltip, convertServerTimeToDate } from './bgr/bgr.util.js'
-import { Column, Row, Table } from './bgr/bgr.table.js'
+import { Table } from './bgr/bgr.table.js'
 import { BgrXmlLoader } from './bgr/bgr.xml.js';
 
 /**
@@ -17,8 +24,8 @@ export function DamageLog() {
     /** @type {HTMLLabelElement} */
     this.__logFileLabel = document.getElementById('damage-log-file-label');
 
-    /** @type {HTMLTableElement} */
-    this.__logPerUnitTable = document.getElementById('damage-log-per-unit-table');
+    this.__logTable = new Table(document.getElementById('damage-log-table'));
+    this.__logPerUnitTable = new Table(document.getElementById('damage-log-per-unit-table'));
 }
 
 /**
@@ -147,21 +154,8 @@ DamageLog.prototype.setLogDatetime = function DamageLog_setLogDatetime(bactions)
  * @param {Map<number, { name: string, hero: BgrJsonHeroData }>} uid_map
  */
 DamageLog.prototype.createDamageLog = function DamageLog_createDamageLog(action_map, uid_map) {
-    const table = new Table();
+    const rows = [];
 
-    /** @type {HTMLTableElement} */
-    table.element = document.getElementById('damage-log-table');
-    table.columns = [
-        new Column('ダメージ'),
-        new Column('SP'),
-        new Column('自動出撃'),
-        new Column('自動スキル'),
-        new Column('ユニット'),
-        new Column('スキル'),
-        new Column('アクション'),
-    ];
-
-    table.rows = [];
     const damages = Array.from(action_map.keys()).sort((a, b) => a - b);
     let sp = '?';
     let isSummonAuto = '?';
@@ -177,7 +171,7 @@ DamageLog.prototype.createDamageLog = function DamageLog_createDamageLog(action_
         }
 
         for (let skillact of baction.skillAction) {
-            table.rows.push(new Row([
+            rows.push([
                 damage,
                 sp,
                 isSummonAuto,
@@ -189,11 +183,21 @@ DamageLog.prototype.createDamageLog = function DamageLog_createDamageLog(action_
                     concat('HP：', x.hp, '(', x.hpDiff, ')'),
                     (x.isCritical ? 'クリティカル' : '命中')
                 ].join('/')).join('\n')
-            ]));
+            ]);
         }
     }
 
-    table.update();
+    this.__logTable.update([
+            'ダメージ',
+            'SP',
+            '自動出撃',
+            '自動スキル',
+            'ユニット',
+            'スキル',
+            'アクション',
+        ],
+        rows
+    );
 }
 
 /**
@@ -253,20 +257,7 @@ DamageLog.prototype.createUnitLog = function DamageLog_createCharacterLog(action
         }
     }
 
-    const table = new Table();
-    table.element = document.getElementById('damage-log-per-unit-table');
-
-    table.columns = [
-        new Column('ユニット'),
-        new Column('与ダメ'),
-        new Column('回数(CRIT/通常)'),
-        new Column('被ダメ'),
-        new Column('回数(CRIT/通常)'),
-        new Column('装備'),
-        new Column('バフ'),
-    ];
-
-    table.rows = [];
+    const rows = [];
     for (let uid of uid_map.keys()) {
         const row = [
             uid_map.get(uid).name,
@@ -301,10 +292,19 @@ DamageLog.prototype.createUnitLog = function DamageLog_createCharacterLog(action
             row.push('');
         }
 
-        table.rows.push(new Row(row));
+        rows.push(row);
     }
 
-    table.update();
+    this.__logPerUnitTable.update([
+            'ユニット',
+            '与ダメ',
+            '回数(CRIT/通常)',
+            '被ダメ',
+            '回数(CRIT/通常)',
+            '装備',
+            'バフ',
+        ],
+        rows);
 }
 
 /**

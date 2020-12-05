@@ -1,3 +1,10 @@
+/**
+ * @file bgr.json.js
+ * @author hifmac(E32456 of the Frea server)
+ * @copyright (c) 2020 hifmac
+ * @license MIT-License
+ */
+
 import { compareDeep } from "./bgr.util.js";
 
 export const BgrJsonKeyMap = (function() {

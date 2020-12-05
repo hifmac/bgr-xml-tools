@@ -1,5 +1,13 @@
 /**
- * BGR xml loader
+ * @file bgr.xml.js
+ * @author hifmac(E32456 of the Frea server)
+ * @copyright (c) 2020 hifmac
+ * @license MIT-License
+ */
+
+
+/**
+ * @constructor BGR xml loader
  * @param {boolean} dynamic_import 
  */
 export function BgrXmlLoader(dynamic_import) {
@@ -26,12 +34,13 @@ BgrXmlLoader.prototype.__itemMap = null;
 BgrXmlLoader.prototype.__listeners = null;
 
 /**
+ * @template T type to be created by constructor
  * @param {Document} doc xml document
  * @param {string} name tag name to find element in the document
- * @param {function(Element): Object} ctor object constructor
- * @returns {Map<number, Object>} mapped object
+ * @param {new() => T} ctor object constructor
+ * @returns {Map<number, T>} mapped object
  */
-BgrXmlLoader.prototype.mapElementsByTagName = function BgrXmlLoader_mapElementsByTagName(doc, name, ctor) {
+function BgrXmlLoader_mapElementsByTagName(doc, name, ctor) {
     const map = new Map();
     const elems = doc.getElementsByTagName(name);
     for (let elem of elems) {
@@ -40,7 +49,8 @@ BgrXmlLoader.prototype.mapElementsByTagName = function BgrXmlLoader_mapElementsB
         }
     }
     return map;
-};
+}
+BgrXmlLoader.prototype.mapElementsByTagName = BgrXmlLoader_mapElementsByTagName;
 
 /**
  * load BGR XML
@@ -52,10 +62,21 @@ BgrXmlLoader.prototype.loadXml = function BgrXmlLoader_loadXml(xml) {
 
     if (bgrxml.firstChild.nodeName == 'BGR') {
         this.__unitBaseMap = this.mapElementsByTagName(bgrxml, 'hero', BgrXmlUnitBase);
+        this.__characterMap = this.mapElementsByTagName(bgrxml, 'herogroup', BgrXmlElementHook);
         this.__skillBaseMap = this.mapElementsByTagName(bgrxml, 'skill', BgrXmlSkillBase);
         this.__equipBaseMap = this.mapElementsByTagName(bgrxml, 'equip', BgrXmlEquipBase);
         this.__bufferBaseMap = this.mapElementsByTagName(bgrxml, 'buff', BgrXmlBufferBase);
-        this.__itemMap = this.mapElementsByTagName(bgrxml, 'item', BgrXmlItem);
+        this.__specialItemMap = this.mapElementsByTagName(bgrxml, 'specialitem', BgrXmlElementHook);
+        this.__achievementMap = this.mapElementsByTagName(bgrxml, 'achievement', BgrXmlElementHook);
+        this.__questMap = this.mapElementsByTagName(bgrxml, 'quest', BgrXmlElementHook);
+
+        this.__stageMap = this.mapElementsByTagName(bgrxml, 'stage', BgrXmlElementHook);
+        this.__stageListMap = this.mapElementsByTagName(bgrxml, 'stagelist', BgrXmlElementHook);
+        this.__stageAreaMap = this.mapElementsByTagName(bgrxml, 'stagearea', BgrXmlElementHook);
+        this.__stageGroupMap = this.mapElementsByTagName(bgrxml, 'stage_group', BgrXmlElementHook);
+        this.__chapterGroupMap = this.mapElementsByTagName(bgrxml, 'chapter_group', BgrXmlElementHook);
+
+        console.log(Array.from(this.__stageMap.values())[0].keySet);
         return true;
     }
 
@@ -64,13 +85,56 @@ BgrXmlLoader.prototype.loadXml = function BgrXmlLoader_loadXml(xml) {
 
 /**
  * call functor for each unit
+ * @template T
+ * @param {Map<string, T>} map
+ * @param {function(T): void} f functor
+ */
+function BgrXmlLoader_forEach(map, f) {
+    for (let key of map.keys()) {
+        f(map.get(key));
+    }
+}
+BgrXmlLoader.prototype.forEach = BgrXmlLoader_forEach;
+
+/**
+ * call functor for each unit
  * @param {function(BgrXmlUnitBase): void} f functor
  */
 BgrXmlLoader.prototype.forEachUnitBase = function BgrXmlLoader_forEachUnitBase(f) {
-    for (let key of this.__unitBaseMap.keys()) {
-        f(this.__unitBaseMap.get(key));
-    }
-}
+    this.forEach(this.__unitBaseMap, f);
+};
+
+/**
+ * call functor for each equip
+ * @param {function(BgrXmlEquipBase): void} f functor
+ */
+BgrXmlLoader.prototype.forEachEquipBase = function BgrXmlLoader_forEachEquipBase(f) {
+    this.forEach(this.__equipBaseMap, f);
+};
+
+/**
+ * call functor for each skill
+ * @param {function(BgrXmlSkillBase): void} f functor
+ */
+BgrXmlLoader.prototype.forEachSkillBase = function BgrXmlLoader_forEachSkillBase(f) {
+    this.forEach(this.__skillBaseMap, f);
+};
+
+/**
+ * call functor for each buffer
+ * @param {function(BgrXmlBufferBase): void} f functor
+ */
+BgrXmlLoader.prototype.forEachBufferBase = function BgrXmlLoader_forEachBufferBase(f) {
+    this.forEach(this.__bufferBaseMap, f);
+};
+
+/**
+ * call functor for each item
+ * @param {function(BgrXmlItem): void} f functor
+ */
+BgrXmlLoader.prototype.forEachItem = function BgrXmlLoader_forEachItem(f) {
+    this.forEach(this.__itemMap, f);
+};
 
 BgrXmlLoader.prototype.getUnitBase = function BgrXmlLoader_getUnitBase(unitId) {
     return this.__unitBaseMap.get(String(unitId));
@@ -108,8 +172,8 @@ BgrXmlLoader.prototype.getItem = function BgrXmlLoader_getItem(itemid) {
 }
 
 /**
- * BGR unit base
- * @param {Element} node 
+ * @constructor BGR unit base
+ * @param {Element} node
  */
 export function BgrXmlUnitBase(node) {
     if (node.nodeName != 'hero') {
@@ -151,7 +215,7 @@ export function BgrXmlUnitBase(node) {
 }
 
 /**
- * BGR equip base
+ * @constructor BGR equip base
  * @param {Element} node 
  */
 export function BgrXmlEquipBase(node) {
@@ -176,7 +240,7 @@ export function BgrXmlEquipBase(node) {
 }
 
 /**
- * BGR skill base
+ * @constructor BGR skill base
  * @param {Element} node 
  */
 export function BgrXmlSkillBase(node) {
@@ -227,7 +291,7 @@ export function BgrXmlSkillBase(node) {
 }
 
 /**
- * BGR buffer base
+ * @constructor BGR buffer base
  * @param {Element} node 
  */
 export function BgrXmlBufferBase(node) {
@@ -255,7 +319,7 @@ export function BgrXmlBufferBase(node) {
 }
 
 /**
- * BGR XML item
+ * @constructor BGR XML item
  * @param {Element} node 
  */
 export function BgrXmlItem(node) {
@@ -284,3 +348,24 @@ export function BgrXmlItem(node) {
     this.spValue2 = node.getAttribute('sp_val2');
     this.specialPresent = node.getAttribute('special_present');
 }
+
+/**
+ * @constructor BGR xml element hook
+ * @param {HTMLElement} node
+ */
+export function BgrXmlElementHook(node) {
+    for (let attr of node.getAttributeNames()) {
+        if (!this.keySet.has(node.tagName)) {
+            this.keySet.set(node.tagName, new Set());
+        }
+
+        this.keySet.get(node.tagName).add(attr);
+    }
+
+    this.id = node.getAttribute('id');
+}
+
+/**
+ * @type {Map<string, Set<string>>}
+ */
+BgrXmlElementHook.prototype.keySet = new Map();

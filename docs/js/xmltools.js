@@ -1,3 +1,9 @@
+/**
+ * @file xmltools.js
+ * @author hifmac(E32456 of the Frea server)
+ * @copyright (c) 2020 hifmac
+ * @license MIT-License
+ */
 
 import { BgrXmlLoader } from './bgr/bgr.xml.js'
 import { readFile } from './bgr/bgr.util.js'
@@ -19,7 +25,7 @@ onload = function() {
             readFile(file, function(ev) {
                 const loader = new BgrXmlLoader();
                 if (loader.loadXml(ev.target.result)) {
-                    xmlFileLabel.textContent = file.name;
+                    xmlFileLabel.textContent = file.name + ' [OK]';
                     dmglog.setLoader(loader);
                     databrowser.setLoader(loader);
                 }

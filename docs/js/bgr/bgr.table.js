@@ -1,191 +1,110 @@
+/**
+ * @file bgr.table.js
+ * @author hifmac(E32456 of the Frea server)
+ * @copyright (c) 2020 hifmac
+ * @license MIT-License
+ */
+
 import {
     clearChild,
-    compareAsc,
-    compareDesc,
     createElement,
-    updateElement,
+    Checkbox,
+    lastElement,
 } from './bgr.util.js'
-
-/*return {
-    'data-toggle': 'tooltip',
-    'data-placement': 'top',
-    title,
-};*/
-
-/**
- * @class table column class
- */
-export function Column(name, format) {
-    this.name = name;
-    this.format = format;
-}
-
-/**
- * @member column column name
- * @type {string}
- */
-Column.prototype.name = '';
-
-/**
- * @member isEnabled controls this column is visible or not
- * @type {boolean}
- */
-Column.prototype.isEnabled = true;
-
-/**
- * @member format column value formatter
- * @type {function((number | string)): string}
- */
-Column.prototype.format = null;
-
-/**
- * @returns {string} human readable column string
- */
-Column.prototype.string = function Column_string(value) {
-    return (this.format ? this.format(value) : value);
-};
-
-/**
- * table row
- * @param {(number | string)[]} cells 
- * @param {{
- *     styles: Object,
- *     classes: string[],
- *     attributes: Object,
- * }} properties 
- */
-export function Row(cells, properties) {
-    this.cells = cells;
-    this.properties = properties;
-}
-
-/** @type {(number | string)[]} */
-Row.prototype.cells = null;
-
-/**
- * @type {{
- *     styles: Object,
- *     classes: string[],
- *     attributes: Object,
- * }}
- */
-Row.prototype.properties = null;
-
-export function Table() {
-}
-
-/**
- * table columns
- * @type {Column[]}
- */
-Table.prototype.columns = null;
-
-/**
- * data rows to show
- * @type {Row[]}
- */
-Table.prototype.rows = null;
-
-/**
- * table element
- * @type {HTMLTableElement}
- */
-Table.prototype.element = null
-
-/**
- * table sort column
- * @type {number}
- */
-Table.prototype.sortColumn = null;
-
-/**
- * data sort is whether ascending or descending
- * @type {boolean}
- */
-Table.prototype.sortDescending = false;
-
-/**
- * update table column
- */
-Table.prototype.update = function Table_update() {
-    if (this.columns && this.rows && this.element) {
-        clearChild(this.element);
-        this.element.classList.add('table-prewrap');
-        this.element.appendChild(this.createHeader());
-        this.element.appendChild(this.createBody());
-    }
-}
-
 
 /**
  * create table header
+ * @param {(string | number)[]} columns
  * @returns {HTMLTableCaptionElement}
  */
-Table.prototype.createHeader = function Table_createHeader() {
+function createHeader(columns) {
     /** @type {HTMLTableRowElement} */
     const row = document.createElement('tr');
-    for (let column of this.columns) {
-        const columnName = column.name + (this.sortColumn === column ? (this.sortDescending ? '▽' : '△') : ''); 
-        const cell = createElement('th', columnName);
-        cell.addEventListener('click', this.onHeaderClicked.bind(this, column));
-        row.append(cell);
+    for (let column of columns) {
+        row.appendChild(createElement('th', column));
     }
 
     /** @type {HTMLTableCaptionElement} */
     const thead = document.createElement('thead');
     thead.classList.add('thead-dark');
-    thead.append(row);
+    thead.appendChild(row);
     return thead;
 };
 
 /**
- * create table body
- * @returns {HTMLTableSectionElement}
+ * DataTables interface
+ * @param {HTMLTableElement} element table element 
  */
-Table.prototype.createBody = function Table_createBody() {
-    /*
-     * sort table objects if there is a sorter
+export function Table(element) {
+    this.__element = element;
+
+    /**
+     * @type {{
+     *     destroy: () => void,
+     *     draw: () => void,
+     *     rows: {
+     *         add: (Object[][]) => void,
+     *     },
+     * }}
      */
-    if (this.sortColumn) {
-        for (let i in this.columns) {
-            if (this.sortColumn === this.columns[i]) {
-                const compare = this.sortDescending ? compareDesc : compareAsc;
-                this.rows.sort((a, b) => compare(a.cells[i], b.cells[i]));
-                break;
-            }
-        }
-    }
-
-    /** @type {HTMLTableSectionElement} */
-    const tbody = document.createElement('tbody');
-    for (let row of this.rows) {
-        /** @type {HTMLTableRowElement} */
-        const tr = document.createElement('tr');
-        if (row.properties) {
-            updateElement(tr, row.properties);
-        }
-        for (let i in row.cells) {
-            if (this.columns[i].isEnabled) {
-                tr.append(createElement('td', this.columns[i].string(row.cells[i])));
-            }
-        }
-        tbody.append(tr);
-    }
-
-    return tbody;
-};
+    this.__dataTable = null;
+}
 
 /**
- * update sort column and table when the header is clicked
- * @param {Column} column 
+ * update and redraw table
+ * @param {(number | string)[]} columns 
+ * @param {(number | string)[][]} rows 
  */
-Table.prototype.onHeaderClicked = function Table_onHeaderClicked(column) {
-    if (this.sortColumn === column) {
-        this.sortDescending = !this.sortDescending;
+Table.prototype.update = function Table_update(columns, rows) {
+    if (this.__dataTable) {
+        this.__dataTable.destroy();
+        this.__dataTable = null;
     }
-    else {
-        this.sortColumn = column;
-        this.sortDescending = true;
+
+    clearChild(this.__element);
+    this.__element.classList.add('table-prewrap');
+    this.__element.appendChild(createHeader(columns));
+
+    const lengthMenu = [ [], [] ];
+    const maxLength = Math.min(1000, rows.length / 3 | 0);
+    for (let i = 10; i <= maxLength;) {
+        lengthMenu[0].push(i);
+        lengthMenu[1].push(i);
+        if (i % 3 == 0) {
+            i = i * 10 / 3;
+        }
+        else {
+            i *= 3;
+        }
     }
-    this.update();
-};
+    lengthMenu[0].push(-1);
+    lengthMenu[1].push('All');
+
+    this.__dataTable = $(this.__element).DataTable({
+        order: [ [0, 'asc'] ],
+        paging: true,
+        lengthMenu,
+        pageLength: rows.length < 1000 ? -1 : 1000,
+        pagingType: 'full_numbers',
+    });
+    this.__dataTable.rows.add(rows);
+    this.__dataTable.draw();
+}
+
+/**
+ * set column selector
+ * @param {HTMLElement} element 
+ */
+Table.prototype.setColumnSelector = function Table_setColumnSelector(element) {
+    element.textContent = '列：';
+
+    clearChild(element);
+    const tableId = this.__dataTable.table().node().id;
+    for (let i = 0, length = this.__dataTable.columns().nodes().length; i < length; ++i) {
+        const column = this.__dataTable.column(i);
+        const checkbox = new Checkbox(tableId + '-' + i, column.header().textContent);
+        checkbox.input.addEventListener('change', () => column.visible(checkbox.input.checked));
+        element.appendChild(checkbox.div);
+    }
+}
+

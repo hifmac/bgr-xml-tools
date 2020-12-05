@@ -4,10 +4,14 @@
         <meta charset="UTF-8"> 
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
+        <!-- DataTables -->
+        <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.22/css/jquery.dataTables.css">    
+
         <!-- Bootstrap CSS -->
         <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
-        <link rel="stylesheet" href="css/xmltools.css">
 
+        <!-- BGR module -->
+        <link rel="stylesheet" href="css/xmltools.css">
         <script src="js/xmltools.js" type="module"></script>
 
         <title>XMLツール</title>
@@ -38,28 +42,29 @@
                         <input type="file" class="custom-file-input" id="damage-log-file">
                         <label class="custom-file-label" for="damage-log-file" id="damage-log-file-label">ログファイル</label>
                     </div>
-    
+
+                    <div class="mb-2" id="log-datetime"></div>
+
                     <div class="mb-2">
-                        <button class="btn btn-primary mb-2"
+                        <button class="btn btn-secondary mb-2"
                             data-toggle="collapse"
                             data-target="#damage-log-per-unit-table-collapse"
                             aria-expand="true"
                             aria-controls="damage-log-per-unit-table-collapse">ユニットログ</button>
-                        <button class="btn btn-primary mb-2"
+                        <div class="collapse" id="damage-log-per-unit-table-collapse">
+                            <table class="table table-hover table-striped table-bordered" id="damage-log-per-unit-table"></table>
+                        </div>
+                    </div>
+
+                    <div class="mb-2">
+                        <button class="btn btn-secondary mb-2"
                             data-toggle="collapse"
                             data-target="#damage-log-table-collapse"
                             aria-expand="true"
                             aria-controls="damage-log-table-collapse">ダメージログ</button>
-                    </div>
-
-                    <div class="mb-2" id="log-datetime"></div>
-
-                    <div class="collapse mb-2" id="damage-log-per-unit-table-collapse">
-                        <table class="table table-hover table-striped table-bordered" id="damage-log-per-unit-table"></table>
-                    </div>
-
-                    <div class="collapse mb-2 show" id="damage-log-table-collapse">
-                        <table class="table table-hover table-striped table-bordered" id="damage-log-table"></table>
+                        <div class="collapse show" id="damage-log-table-collapse">
+                            <table class="table table-hover table-striped table-bordered" id="damage-log-table"></table>
+                        </div>
                     </div>
                 </div>
 
@@ -77,6 +82,8 @@
                     </div>
 
                     <div>
+                        <div class="form-group form-inline mb-2" id='data-browser-column-selector'>
+                        </div>
                         <table class="table table-hover table-striped table-bordered" id="data-browser-table"></table>
                     </div>
 
@@ -85,10 +92,28 @@
 
         </div>
 
+        <!-- Footer -->
+        <footer class="page-footer font-small blue pt-4">
+            <hr/>
+            <!-- Copyright -->
+            <div class="footer-copyright text-center py-3">
+                OSS link and license notice used in this site!<br/>
+                <a href="https://getbootstrap.com/">Bootstrap</a> (C) 2020 MIT-license<br/>
+                <a href="https://jquery.com/">jQuery</a> (C) 2020 The jQuery Foundation. jQuery License<br/>
+                <a href="https://popper.js.org/">popper.js</a> (C) 2020 MIT License<br/>
+                <a href="https://datatables.net/">DataTables</a> (C) 2007-2020 MIT licensed
+            </div>
+            <!-- Copyright -->
+        </footer>
+        <!-- Footer -->
+  
         <!-- Optional JavaScript -->
         <!-- jQuery first, then Popper.js, then Bootstrap JS -->
         <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
         <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
         <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js" integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI" crossorigin="anonymous"></script>
+
+        <!-- DataTable as jQuery plugin -->
+        <script src="https://cdn.datatables.net/1.10.22/js/jquery.dataTables.js" type="text/javascript" charset="utf8" ></script>
     </body>
 </html>

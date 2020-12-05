@@ -1,4 +1,11 @@
 /**
+ * @file bgr.util.js
+ * @author hifmac(E32456 of the Frea server)
+ * @copyright (c) 2020 hifmac
+ * @license MIT-License
+ */
+
+/**
  * remove all children from an element
  * @param {HTMLElement} elem 
  */
