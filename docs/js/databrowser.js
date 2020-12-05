@@ -101,7 +101,7 @@ DataBrowser.prototype.setEquipTable = function DataBrowser_setEquipTable() {
         this.__loader.getItem(equipBase.id).name,
         equipBase.open,
         equipBase.over,
-        rankNumber2String(parseInt(equipBase.rank)),
+        equipBase.rank,
         equipBase.baseLvMax,
         concat(equipBase.hp, equipBase.hpRate ? concat('(' , equipBase.hpRate, ')') : ''),
         concat(equipBase.attack, equipBase.attackRate ? concat('(' , equipBase.attackRate, ')') : ''),
@@ -234,8 +234,8 @@ DataBrowser.prototype.setQuestTable = function DataBrowser_setQuestTable() {
         quest.endTime,
         quest.week,
         quest.comment,
-        quest.specialActId,
         quest.expeditionGroupId,
+        quest.specialActId,
     ]));
 
     this.__table.update([
@@ -247,10 +247,10 @@ DataBrowser.prototype.setQuestTable = function DataBrowser_setQuestTable() {
             'シルバ',
             '開始時間',
             '終了時間',
-            '週',
+            '曜日',
             '説明',
+            '大遠征グループID',
             'specialActId',
-            'expeditionGroupId',
         ],
         rows);
 
