@@ -5,33 +5,19 @@
  * @license MIT-License
  */
 
-
 /**
  * @constructor BGR xml loader
  * @param {boolean} dynamic_import 
  */
 export function BgrXmlLoader(dynamic_import) {
     this.__is_dynamic_import_enabled = dynamic_import;
+
+    /** @type {Array<function(BgrXmlLoader): void>} */
     this.__listeners = [];
+
+    /** @type {Map<string, Set<string>>} */
+    this.__keySet = new Map();
 }
-
-/** @type {Map<string, BgrXmlUnitBase} */
-BgrXmlLoader.prototype.__unitBaseMap = null;
-
-/** @type {Map<string, BgrXmlEquipBase} */
-BgrXmlLoader.prototype.__equipBaseMap = null;
-
-/** @type {Map<string, BgrXmlSkillBase} */
-BgrXmlLoader.prototype.__skillBaseMap = null;
-
-/** @type {Map<string, BgrXmlBufferBase} */
-BgrXmlLoader.prototype.__bufferBaseMap = null;
-
-/** @type {Map<string, BgrXmlItem} */
-BgrXmlLoader.prototype.__itemMap = null;
-
-/** @type {Array<function(BgrXmlLoader): void>} */
-BgrXmlLoader.prototype.__listeners = null;
 
 /**
  * @template T type to be created by constructor
@@ -41,10 +27,26 @@ BgrXmlLoader.prototype.__listeners = null;
  * @returns {Map<number, T>} mapped object
  */
 function BgrXmlLoader_mapElementsByTagName(doc, name, ctor) {
+    /** @type {Map<number, T>} */
     const map = new Map();
+
     const elems = doc.getElementsByTagName(name);
     for (let elem of elems) {
         if (elem.hasAttribute('id')) {
+            /*
+             * collect tag name attributes
+             */
+            for (let attr of elem.getAttributeNames()) {
+                if (!this.__keySet.has(elem.tagName)) {
+                    this.__keySet.set(elem.tagName, new Set());
+                }
+        
+                this.__keySet.get(elem.tagName).add(attr);
+            }
+
+            /*
+             * create and register object
+             */
             map.set(elem.getAttribute('id'), new ctor(elem));
         }
     }
@@ -62,22 +64,23 @@ BgrXmlLoader.prototype.loadXml = function BgrXmlLoader_loadXml(xml) {
 
     if (bgrxml.firstChild.nodeName == 'BGR') {
         this.__unitBaseMap = this.mapElementsByTagName(bgrxml, 'hero', BgrXmlUnitBase);
-        this.__characterMap = this.mapElementsByTagName(bgrxml, 'herogroup', BgrXmlElementHook);
+        this.__characterMap = this.mapElementsByTagName(bgrxml, 'herogroup', BgrXmlCharacter);
         this.__skillBaseMap = this.mapElementsByTagName(bgrxml, 'skill', BgrXmlSkillBase);
         this.__equipBaseMap = this.mapElementsByTagName(bgrxml, 'equip', BgrXmlEquipBase);
         this.__bufferBaseMap = this.mapElementsByTagName(bgrxml, 'buff', BgrXmlBufferBase);
-        this.__itemMap = this.mapElementsByTagName(bgrxml, 'buff', BgrXmlItem);
-        this.__specialItemMap = this.mapElementsByTagName(bgrxml, 'specialitem', BgrXmlElementHook);
-        this.__achievementMap = this.mapElementsByTagName(bgrxml, 'achievement', BgrXmlElementHook);
-        this.__questMap = this.mapElementsByTagName(bgrxml, 'quest', BgrXmlElementHook);
+        this.__itemMap = this.mapElementsByTagName(bgrxml, 'item', BgrXmlItem);
+        this.__specialItemMap = this.mapElementsByTagName(bgrxml, 'specialitem', BgrXmlSpecialItem);
+        this.__achievementMap = this.mapElementsByTagName(bgrxml, 'achievement', BgrXmlAchievement);
+        this.__questMap = this.mapElementsByTagName(bgrxml, 'quest', BgrXmlQuest);
 
-        this.__stageMap = this.mapElementsByTagName(bgrxml, 'stage', BgrXmlElementHook);
-        this.__stageListMap = this.mapElementsByTagName(bgrxml, 'stagelist', BgrXmlElementHook);
-        this.__stageAreaMap = this.mapElementsByTagName(bgrxml, 'stagearea', BgrXmlElementHook);
-        this.__stageGroupMap = this.mapElementsByTagName(bgrxml, 'stage_group', BgrXmlElementHook);
-        this.__chapterGroupMap = this.mapElementsByTagName(bgrxml, 'chapter_group', BgrXmlElementHook);
+        this.__stageMap = this.mapElementsByTagName(bgrxml, 'stage', BgrXmlStage);
+        this.__stageListMap = this.mapElementsByTagName(bgrxml, 'stagelist', BgrXmlStageList);
+        this.__stageAreaMap = this.mapElementsByTagName(bgrxml, 'stagearea', BgrXmlStageArea);
+        this.__stageGroupMap = this.mapElementsByTagName(bgrxml, 'stage_group', BgrXmlStageGroup);
+        this.__chapterGroupMap = this.mapElementsByTagName(bgrxml, 'chapter_group', BgrXmlChapterGroup);
 
-        console.log(Array.from(this.__stageMap.values())[0].keySet);
+        console.log(this.__keySet);
+
         return true;
     }
 
@@ -127,6 +130,30 @@ BgrXmlLoader.prototype.forEachSkillBase = function BgrXmlLoader_forEachSkillBase
  */
 BgrXmlLoader.prototype.forEachBufferBase = function BgrXmlLoader_forEachBufferBase(f) {
     this.forEach(this.__bufferBaseMap, f);
+};
+
+/**
+ * call functor for each achievement
+ * @param {function(BgrXmlAchievement): void} f functor
+ */
+BgrXmlLoader.prototype.forEachAchievement = function BgrXmlLoader_forEachAchievement(f) {
+    this.forEach(this.__achievementMap, f);
+};
+
+/**
+ * call functor for each quest
+ * @param {function(BgrXmlQuest): void} f functor
+ */
+BgrXmlLoader.prototype.forEachQuest = function BgrXmlLoader_forEachQuest(f) {
+    this.forEach(this.__questMap, f);
+};
+
+/**
+ * call functor for each special item
+ * @param {function(BgrXmlSpecialItem): void} f functor
+ */
+BgrXmlLoader.prototype.forEachSpeciapItem = function BgrXmlLoader_forEachSpecialItem(f) {
+    this.forEach(this.__specialItemMap, f);
 };
 
 /**
@@ -187,15 +214,14 @@ export function BgrXmlUnitBase(node) {
     this.id = node.getAttribute('id');
     this.groupId = node.getAttribute('group_id');
     this.name = node.getAttribute('name');
-    this.attribute = node.getAttribute('attr');
-    this.maxLv = node.getAttribute('max_lv');
-    this.summonCooldown = node.getAttribute('summon_cd');
-
     this.rank = node.getAttribute('rank');
-    this.bgRank = node.getAttribute('bg_rank');
-
+    this.point = node.getAttribute('point');
+    this.maxLv = node.getAttribute('max_lv');
+    this.rankUpLv = node.getAttribute('rank_up_lv');
+    this.cost = node.getAttribute('cost');
+    this.normalSkill = node.getAttribute('nskill');
     this.hp = node.getAttribute('hp');
-    this.hpRank = node.getAttribute('hprate');
+    this.hpRate = node.getAttribute('hprate');
     this.attack = node.getAttribute('atk');
     this.attackRate = node.getAttribute('atkrate');
     this.defense = node.getAttribute('def');
@@ -204,15 +230,36 @@ export function BgrXmlUnitBase(node) {
     this.speedRate = node.getAttribute('spdrate');
     this.move = node.getAttribute('move');
     this.critical = node.getAttribute('crit');
-
-    this.leaderSkill = node.getAttribute('lskill');
+    this.rankup = node.getAttribute('rankup');
+    this.attribute = node.getAttribute('attr');
+    this.gpItem = node.getAttribute('gpitem');
     this.attackSkill = node.getAttribute('askill');
-    this.normalSkill = node.getAttribute('nskill');
-
-    this.monsterAi = node.getAttribute('monster_ai');
-    this.monsterSkill = node.getAttribute('monster_skill');
-
+    this.leaderSkill = node.getAttribute('lskill');
+    this.damageDead = node.getAttribute('damage_dead');
+    this.damageScore = node.getAttribute('damage_score');
+    this.summonCooldown = node.getAttribute('summon_cd');
+    this.sell = node.getAttribute('sell');
+    this.stoneSell = node.getAttribute('stone_sell');
+    this.rareStone = node.getAttribute('rare_stone');
+    this.exp = node.getAttribute('exp');
+    this.over1Item = node.getAttribute('over1_item');
+    this.over2Item = node.getAttribute('over2_item');
+    this.over3Item = node.getAttribute('over3_item');
+    this.over4Item = node.getAttribute('over4_item');
+    this.awakenAtttak = node.getAttribute('awaken_atk');
+    this.awakenDefense = node.getAttribute('awaken_def');
+    this.awakenCritical = node.getAttribute('awaken_crit');
+    this.onlyGpItem = node.getAttribute('onlygpitem');
+    this.plusAdd = node.getAttribute('plus_add');
+    this.bgRank = node.getAttribute('bg_rank');
+    this.plusAddMaterial = node.getAttribute('plus_add_material');
+    this.deadVoice = node.getAttribute('dead_voice');
     this.comment = node.getAttribute('comment');
+    this.monsterSkill = node.getAttribute('monster_skill');
+    this.monsterAi = node.getAttribute('monster_ai');
+    this.suicideTime = node.getAttribute('suicide_time');
+    this.suicideHp = node.getAttribute('suicide_hp');
+    this.countPoint = node.getAttribute('count_point');
 }
 
 /**
@@ -273,20 +320,22 @@ export function BgrXmlSkillBase(node) {
     this.attackStandardRange = node.getAttribute('atkstandardrange');
     this.sortestAttackRange = node.getAttribute('shortest_atkrange');
 
-    this.buffer1 = {
-        probability: node.getAttribute('bprob1'),
-        effect: node.getAttribute('buff1'),
-        self: node.getAttribute('buff_self1'),
-        area: node.getAttribute('buff_area1'),
-        areaDuration: node.getAttribute('buff_area_dur1'),
-    };
-    this.buffer2 = {
-        probability: node.getAttribute('bprob2'),
-        effect: node.getAttribute('buff2'),
-        self: node.getAttribute('buff_self2'),
-        area: null,
-        aeraDuration: null,
-    };
+    this.buffer = [
+        {
+            probability: node.getAttribute('bprob1'),
+            effect: node.getAttribute('buff1'),
+            self: node.getAttribute('buff_self1'),
+            area: node.getAttribute('buff_area1'),
+            areaDuration: node.getAttribute('buff_area_dur1'),
+        },
+        {
+            probability: node.getAttribute('bprob2'),
+            effect: node.getAttribute('buff2'),
+            self: node.getAttribute('buff_self2'),
+            area: null,
+            aeraDuration: null,
+        }
+    ];
 
     this.comment = node.getAttribute('comment');
 }
@@ -351,22 +400,353 @@ export function BgrXmlItem(node) {
 }
 
 /**
+ * @constructor BGR XML character
+ * @param {Element} node 
+ */
+export function BgrXmlCharacter(node) {
+    this.id = node.getAttribute('id');
+    this.type = node.getAttribute('type');
+    this.open = node.getAttribute('open');
+    this.pictureId = node.getAttribute('picid');
+    this.iconAtlas = node.getAttribute('icon_atlas');
+    this.animeX = node.getAttribute('ani_x');
+    this.animeY = node.getAttribute('ani_y');
+    this.animeH = node.getAttribute('ani_h');
+    this.pictureX = node.getAttribute('pic_x');
+    this.pictureY = node.getAttribute('pic_y');
+    this.resource = node.getAttribute('resource');
+    this.reviewSkillId = node.getAttribute('review_skill_id');
+    this.hScene1 = node.getAttribute('hscene1');
+    this.hScene2 = node.getAttribute('hscene2');
+    this.skillTalk =  [
+        node.getAttribute('skilltalk1'),
+        node.getAttribute('skilltalk2'),
+        node.getAttribute('skilltalk3'),
+    ];
+    this.name = node.getAttribute('name');
+    this.cv = node.getAttribute('cv');
+    this.comment = node.getAttribute('comment');
+    this.artist = node.getAttribute('artist');
+    this.basegptalk = [
+        node.getAttribute('basegptalk1'),
+        node.getAttribute('basegptalk2'),
+        node.getAttribute('basegptalk3'),
+    ];
+    this.skinOnly = node.getAttribute('skin_only');
+    this.addgptalk = [
+        node.getAttribute('addgptalk1'),
+        node.getAttribute('addgptalk2'),
+        node.getAttribute('addgptalk3'),
+        node.getAttribute('addgptalk4'),
+        node.getAttribute('addgptalk5'),
+    ];
+    this.pictureCutin = node.getAttribute('pic_cutin');
+    this.sportsTalk = node.getAttribute('sportstalk');
+    this.bossBattleBonus = node.getAttribute('boss_battle_bonus');
+    this.marryTalk = node.getAttribute('marrytalk');
+    this.pictureOnly = node.getAttribute('pic_only');    
+}
+
+/**
+ * @constructor BGR XML achievement
+ * @param {Element} node 
+ */
+export function BgrXmlAchievement(node) {
+    this.id = node.getAttribute('id');
+    this.open = node.getAttribute('open');
+    this.display = node.getAttribute('display');
+    this.type = node.getAttribute('type');
+    this.groupId = node.getAttribute('group_id');
+    this.name = node.getAttribute('name');
+    this.level = node.getAttribute('level');
+    this.tarInfo = node.getAttribute('tar_info');
+    this.comment = node.getAttribute('comment');
+    this.fin = [
+        {
+            type: node.getAttribute('fintype1'),
+            cnt: node.getAttribute('fincnt1'),
+            tar: node.getAttribute('fintar1'),
+        },
+        {
+            type: node.getAttribute('fintype2'),
+            cnt: node.getAttribute('fincnt2'),
+            tar: node.getAttribute('fintar2'),
+        }
+    ];
+    this.allfin = node.getAttribute('allfin');
+    this.proudstone = node.getAttribute('proudstone');
+    this.startTime = node.getAttribute('start_time');
+    this.atlas = node.getAttribute('atlas');
+    this.icon = node.getAttribute('icon');   
+}
+
+/**
+ * @constructor BGR XML quest
+ * @param {Element} node 
+ */
+export function BgrXmlQuest(node) {
+    this.id = node.getAttribute('id');
+    this.open = node.getAttribute('open');
+    this.type = node.getAttribute('type');
+    this.name = node.getAttribute('name');
+    this.tarInfo = node.getAttribute('tarinfo');
+    this.comment = node.getAttribute('comment');
+    this.fin = [
+        {
+            type: node.getAttribute('fintype1'),
+            cnt: node.getAttribute('fincnt1'),
+            tar: node.getAttribute('fintar1'),
+        },
+        {
+            type: node.getAttribute('fintype2'),
+            cnt: node.getAttribute('fincnt2'),
+            tar: node.getAttribute('fintar2'),
+        },
+        {
+            type: node.getAttribute('fintype3'),
+            tar: node.getAttribute('fintar3'),
+            cnt: node.getAttribute('fincnt3'),
+        }
+    ];
+
+    this.money = node.getAttribute('money');
+    this.item = [
+        node.getAttribute('item1'),
+        node.getAttribute('item2'),
+    ];
+    this.chapterGroupId = node.getAttribute('chapter_gid');
+    this.edtalk = node.getAttribute('edtalk');
+    this.week = node.getAttribute('week');
+    this.createTime = node.getAttribute('create_time');
+    this.expeditionGroupId = node.getAttribute('expedition_group_id');
+    this.goWindow = node.getAttribute('gowindow');
+    this.preQuest = node.getAttribute('pre_quest');
+    this.allfin = node.getAttribute('allfin');
+    this.onlyFinish = node.getAttribute('only_finish');
+    this.rerunGroupId = node.getAttribute('rerun_group_id');
+    this.sortOrder = node.getAttribute('sort_order');
+    this.startTime = node.getAttribute('start_time');
+    this.endTime = node.getAttribute('end_time');
+    this.specialActId = node.getAttribute('spe_act_id');
+    this.preHGroup1 = node.getAttribute('pre_hg1');        
+}
+
+/**
+ * @constructor BGR XML stage
+ * @param {Element} node 
+ */
+export function BgrXmlStage(node) {
+    this.id = node.getAttribute('id');
+    this.open = node.getAttribute('open');
+    this.type = node.getAttribute('type');
+    this.name = node.getAttribute('name');
+    this.atlas = node.getAttribute('atlas');
+    this.icon = node.getAttribute('icon');
+    this.level = node.getAttribute('lv');
+    this.battleBg = node.getAttribute('battle_bg');
+    this.mapBuffer = node.getAttribute('map_buff');
+    this.moveMinY = node.getAttribute('move_min_y');
+    this.moveMaxY = node.getAttribute('move_max_y');
+    this.costAP = node.getAttribute('cost_ap');
+    this.baseMoney = node.getAttribute('base_money');
+    this.rateMoney = node.getAttribute('rate_money');
+    this.baseHeroExp = node.getAttribute('base_hero_exp');
+    this.rateHeroExp = node.getAttribute('rate_hero_exp');
+    this.baseCharacterExp = node.getAttribute('base_char_exp');
+    this.rateCharacterExp = node.getAttribute('rate_char_exp');
+    this.bgm = node.getAttribute('bgm');
+    this.enemy = [
+        node.getAttribute('enemy1'),
+        node.getAttribute('enemy2'),
+        node.getAttribute('enemy3'),
+        node.getAttribute('enemy4'),
+        node.getAttribute('enemy5'),
+    ];
+    this.enemy = [
+        node.getAttribute('army1'),
+        node.getAttribute('army2'),
+        node.getAttribute('army3'),
+        node.getAttribute('army4'),
+        node.getAttribute('army5'),
+    
+    ];
+    this.item_rate = {
+        s: node.getAttribute('item_rate_s'),
+        a: node.getAttribute('item_rate_a'),
+        b: node.getAttribute('item_rate_b'),
+        c: node.getAttribute('item_rate_c'),
+    };
+    this.mainEnemyGo = node.getAttribute('main_enemy_go');
+    this.enemyGo = node.getAttribute('enemy_go');
+    this.showBattleAgain = node.getAttribute('show_battle_again');
+    this.time = node.getAttribute('time');
+    this.mainOrder = node.getAttribute('main_order');
+    this.showNextStage = node.getAttribute('show_next_stage');
+    this.talk = node.getAttribute('talk');
+    this.stageClear = node.getAttribute('stage_clear');
+    this.autoClearStage = node.getAttribute('auto_clear_stage');
+    this.stagePoint = node.getAttribute('stage_point');
+    this.findStage = node.getAttribute('find_stage');
+    this.findProbability = node.getAttribute('find_prob');
+    this.durationTime = node.getAttribute('dur_time');
+    this.preId = [
+        node.getAttribute('pre_id1'),
+        node.getAttribute('pre_id2'),
+        node.getAttribute('pre_id3'),
+        node.getAttribute('pre_id4'),
+        node.getAttribute('pre_id5'),
+    ];
+    this.comment = node.getAttribute('comment');
+    this.countryScore = node.getAttribute('country_score');
+    this.mainEnemyPosition = node.getAttribute('main_enemy_pos');
+    this.sportsPositionX = node.getAttribute('sports_pos_x');
+    this.sportsPositionY = node.getAttribute('sports_pos_y');
+    this.costItemId = node.getAttribute('cost_item_id');
+    this.costItemNum = node.getAttribute('cost_item_num');
+    this.limitPerDay = node.getAttribute('limit_per_day');
+    this.rightMapBuffer = node.getAttribute('right_map_buff');
+}
+
+/**
+ * @constructor BGR XML stage list
+ * @param {Element} node 
+ */
+export function BgrXmlStageList(node) {
+    this.id = node.getAttribute('id');
+    this.name = node.getAttribute('name');
+    this.questId = node.getAttribute('quest_id');
+    this.open = node.getAttribute('open');
+    this.newCb = node.getAttribute('new_cb');
+    this.preId = [
+        node.getAttribute('pre_id1'),
+        node.getAttribute('pre_id2'),
+        node.getAttribute('pre_id3'),
+        node.getAttribute('pre_id4'),
+        node.getAttribute('pre_id5'),
+    ];
+    this.type = node.getAttribute('type');
+    this.parameter1 = node.getAttribute('parameter1');
+    this.parameter2 = node.getAttribute('parameter2');   
+}
+
+/**
+ * @constructor BGR XML stage area
+ * @param {Element} node 
+ */
+export function BgrXmlStageArea(node) {
+    this.id = node.getAttribute('id');
+    this.open = node.getAttribute('open');
+    this.type = node.getAttribute('type');
+    this.bg = node.getAttribute('bg');
+    this.bgName = node.getAttribute('bgname');
+    this.name = node.getAttribute('name');
+    this.color = node.getAttribute('color');
+    this.pointX = node.getAttribute('pointx');
+    this.pointY = node.getAttribute('pointy');
+    this.groupId = node.getAttribute('group_id');
+    this.item = node.getAttribute('item');
+    this.comment = node.getAttribute('comment');
+    this.areaAttribute = node.getAttribute('area_attr');
+    this.openCycle = node.getAttribute('open_cycle');
+    this.startTime = node.getAttribute('start_time');
+    this.endTime = node.getAttribute('end_time');
+    this.serverId = node.getAttribute('server_id');
+    this.duration = node.getAttribute('duration');
+    this.preId = [
+        node.getAttribute('pre_id1'),
+        node.getAttribute('pre_id2'),
+        node.getAttribute('pre_id3'),
+        node.getAttribute('pre_id4'),
+        node.getAttribute('pre_id5'),
+    ];
+    this.infinityLevel = node.getAttribute('infinity_level');
+    this.infinityPoint = node.getAttribute('infinity_point');
+    this.infinityTime = node.getAttribute('infinity_time');
+}
+
+/**
+ * @constructor BGR XML stage group
+ * @param {Element} node 
+ */
+export function BgrXmlStageGroup(node) {
+    this.id = node.getAttribute('id');
+    this.name = node.getAttribute('name');
+    this.open = node.getAttribute('open');
+    this.type = node.getAttribute('type');
+    this.hero = node.getAttribute('hero');
+    this.face = node.getAttribute('face');
+    this.heroPictureX = node.getAttribute('hero_pic_x');
+    this.heroPictureY = node.getAttribute('hero_pic_y');
+    this.heroPictureSizeX = node.getAttribute('hero_pic_size_x');
+    this.heroPictureRotationZ = node.getAttribute('hero_pic_rotation_z');
+    this.bg = node.getAttribute('bg');
+    this.bgX = node.getAttribute('bg_x');
+    this.bgY = node.getAttribute('bg_y');
+    this.bgSizeX = node.getAttribute('bg_size_x');
+    this.bgSizeY = node.getAttribute('bg_size_y');
+    this.sortOrder = node.getAttribute('sort_order');
+    this.activityShop = node.getAttribute('activity_shop');
+    this.itemAtlas = node.getAttribute('item_atlas');
+    this.itemIcon = node.getAttribute('item_icon');
+    this.startTime = node.getAttribute('start_time');
+    this.endTime = node.getAttribute('end_time');
+}
+
+/**
+ * @constructor BGR XML chapter group
+ * @param {Element} node 
+ */
+export function BgrXmlChapterGroup(node) {
+    this.id = node.getAttribute('id');
+    this.name = node.getAttribute('name');
+    this.hero = node.getAttribute('hero');
+    this.face = node.getAttribute('face');
+    this.heroPictureX = node.getAttribute('hero_pic_x');
+    this.heroPictureY = node.getAttribute('hero_pic_y');
+    this.heroPictureSizeX = node.getAttribute('hero_pic_size_x');
+    this.heroPictureSizeY = node.getAttribute('hero_pic_size_y');
+    this.heroPictureRotationZ = node.getAttribute('hero_pic_rotation_z');
+    this.bg = node.getAttribute('bg');
+    this.bgX = node.getAttribute('bg_x');
+    this.bgY = node.getAttribute('bg_y');
+    this.bgSizeX = node.getAttribute('bg_size_x');
+    this.bgSizeY = node.getAttribute('bg_size_y');
+}
+
+/**
+ * @constructor BGR XML special item
+ * @param {Element} node 
+ */
+export function BgrXmlSpecialItem(node) {
+    this.comment = node.getAttribute('comment');
+    this.group = node.getAttribute('group');
+    this.icon = node.getAttribute('icon');
+    this.id = node.getAttribute('id');
+    this.name = node.getAttribute('name');
+
+    /**
+     * @type {{
+     *     content: string,
+     *     probability: number,
+     * }[]}
+     */
+    this.item = [];
+    for (let i = 0; node.getAttribute('item' + i) || node.getAttribute('prob' + i); ++i) {
+        this.item.push({
+            content: node.getAttribute('item' + i),
+            probability: node.getAttribute('prob' + i),
+        });
+    }
+ 
+    this.sp_num1 = node.getAttribute('sp_num1');
+    this.sp_num2 = node.getAttribute('sp_num2');
+    this.sp_val = node.getAttribute('sp_val');
+}
+
+/**
  * @constructor BGR xml element hook
  * @param {HTMLElement} node
  */
 export function BgrXmlElementHook(node) {
-    for (let attr of node.getAttributeNames()) {
-        if (!this.keySet.has(node.tagName)) {
-            this.keySet.set(node.tagName, new Set());
-        }
-
-        this.keySet.get(node.tagName).add(attr);
-    }
-
     this.id = node.getAttribute('id');
 }
-
-/**
- * @type {Map<string, Set<string>>}
- */
-BgrXmlElementHook.prototype.keySet = new Map();
