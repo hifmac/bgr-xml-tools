@@ -5,6 +5,8 @@
  * @license MIT-License
  */
 
+ import { translate } from './bgr.util.js'
+
 /**
  * @constructor BGR xml loader
  * @param {boolean} dynamic_import 
@@ -152,7 +154,7 @@ BgrXmlLoader.prototype.forEachQuest = function BgrXmlLoader_forEachQuest(f) {
  * call functor for each special item
  * @param {function(BgrXmlSpecialItem): void} f functor
  */
-BgrXmlLoader.prototype.forEachSpeciapItem = function BgrXmlLoader_forEachSpecialItem(f) {
+BgrXmlLoader.prototype.forEachSpecialItem = function BgrXmlLoader_forEachSpecialItem(f) {
     this.forEach(this.__specialItemMap, f);
 };
 
@@ -166,6 +168,10 @@ BgrXmlLoader.prototype.forEachItem = function BgrXmlLoader_forEachItem(f) {
 
 BgrXmlLoader.prototype.getUnitBase = function BgrXmlLoader_getUnitBase(unitId) {
     return this.__unitBaseMap.get(String(unitId));
+}
+
+BgrXmlLoader.prototype.getEquipBase = function BgrXmlLoader_getEquipBase(equipId) {
+    return this.__equipBaseMap.get(String(equipId));
 }
 
 BgrXmlLoader.prototype.getUnitBaseBySkillID = function BgrXmlLoader_getUnitBase(skillId) {
@@ -377,14 +383,22 @@ export function BgrXmlItem(node) {
     this.mergeId = node.getAttribute('merge_id');
     this.type = node.getAttribute('type');
     this.open = node.getAttribute('open');
-    this.name = node.getAttribute('name');
+    this.name = translate(node.getAttribute('name'));
     this.rank = node.getAttribute('rank');
     this.group = node.getAttribute('group');
     this.moneyPrice = node.getAttribute('money_price');
     this.recycle = node.getAttribute('recycle');
     this.stackNumber = node.getAttribute('stack_num');
  
-    this.changeItem = node.getAttribute('changeitem');
+    const changeItem = node.getAttribute('changeitem');
+    if (typeof changeItem === 'string') {
+        /** @type {string[][]} */
+        this.changeItem = Array.from(changeItem.split('/'), (x) => x.split('#'));
+    }
+    else {
+        this.changeItem = changeItem;
+    }
+
     this.class = node.getAttribute('class');
     this.comment = node.getAttribute('comment');
     this.effectValue = node.getAttribute('effect_val');
@@ -731,10 +745,11 @@ export function BgrXmlSpecialItem(node) {
      * }[]}
      */
     this.item = [];
-    for (let i = 0; node.getAttribute('item' + i) || node.getAttribute('prob' + i); ++i) {
+    for (let i = 1; node.getAttribute('item' + i) || node.getAttribute('prob' + i); ++i) {
+        const prob = node.getAttribute('prob' + i);
         this.item.push({
             content: node.getAttribute('item' + i),
-            probability: node.getAttribute('prob' + i),
+            probability: prob ? parseFloat(prob) : prob,
         });
     }
  

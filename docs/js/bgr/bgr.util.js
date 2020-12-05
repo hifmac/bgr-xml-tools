@@ -67,6 +67,45 @@ export function compareDesc(a, b) {
 }
 
 /**
+ * @template T
+ * @param {Array<T>} array
+ * @param {string} param
+ * @param {asc} whether whether array should be sorted by ascending or not
+ */
+export function sortBy(array, param, asc=true) {
+    if (asc) {
+        array.sort(function(a, b){
+            if (a[param] > b[param]) {
+                return 1;
+            }
+            else if (a[param] < b[param]) {
+                return -1;
+            }
+            return 0;
+        });
+    }
+    else {
+        array.sort(function(a, b){
+            if (a[param] < b[param]) {
+                return 1;
+            }
+            else if (a[param] > b[param]) {
+                return -1;
+            }
+            return 0;
+        });
+    }
+}
+
+/**
+ * translate Chinese to Japanese hopefully
+ * @param {string} str 
+ */
+export function translate(str) {
+    return str ? str.replace('集換證書', '交換チケット') : null;
+}
+
+/**
  * compare 2 objects shallow
  * @param {Object} a 
  * @param {Object} b 
@@ -175,6 +214,11 @@ export function convertServerTimeToDate(serverTime) {
     return new Date(serverTime / 10000 - OFFSET);
 }
 
+/**
+ * convert rank number to string
+ * @param {number} ranknum rank number
+ * @returns {string} rank string
+ */
 export function rankNumber2String(ranknum) {
     switch(ranknum) {
     case 1:
@@ -190,6 +234,27 @@ export function rankNumber2String(ranknum) {
     default:
         return '不明';
     }
+}
+
+/**
+ * get property or default value
+ * @param {object} object 
+ * @param {string} prop 
+ * @param {*} defval 
+ */
+export function getProperty(object, prop, defval) {
+    return object ? object[prop] : defval;
+}
+
+/**
+ * BGR XML boolean is true or not
+ * @param {string} value 
+ */
+export function isTrue(value) {
+    if (typeof value === 'string') {
+        return value === '是';
+    }
+    return value;
 }
 
 /**

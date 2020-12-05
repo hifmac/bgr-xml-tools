@@ -6,7 +6,13 @@
  */
 
 import { BgrXmlLoader } from './bgr/bgr.xml.js'
-import { concat, rankNumber2String } from './bgr/bgr.util.js'
+import {
+    concat,
+    rankNumber2String,
+    getProperty,
+    isTrue,
+    sortBy
+} from './bgr/bgr.util.js'
 import { Table } from './bgr/bgr.table.js'
 
 export function DataBrowser() {
@@ -49,6 +55,9 @@ DataBrowser.prototype.onDataTypeChanged = function DataBrowser_onDataTypeChanged
     case 'specialitem':
         this.setSpecialItemTable();
         break;
+    case 'stage':
+        this.setStageTable();
+        break;
     }
 };
 
@@ -60,7 +69,7 @@ DataBrowser.prototype.setUnitTable = function DataBrowser_setUnitTable() {
             parseInt(unitBase.id),
             parseInt(unitBase.groupId),
             unitBase.name,
-            unitBase.bgRank == '是' ? 'BG' : rankNumber2String(parseInt(unitBase.rank)),
+            isTrue(unitBase.bgRank) ? 'BG' : rankNumber2String(parseInt(unitBase.rank)),
             unitBase.maxLv,
             unitBase.attribute,
             unitBase.summonCooldown,
@@ -131,8 +140,21 @@ DataBrowser.prototype.setEquipTable = function DataBrowser_setEquipTable() {
 }
 
 DataBrowser.prototype.setItemTable = function DataBrowser_setItemTable() {
-    const rows = [];
+    /**
+     * format change item in item
+     * @param {BgrXmlLoader} loader 
+     * @param {string[][]} changeItem 
+     */
+    const formatChangeItem = function(loader, changeItem) {
+        if (changeItem) {
+            return Array.from(
+                changeItem,
+                (x) => concat(getProperty(loader.getItem(x[0]), 'name', x[0]), 'x', x[1])).join('\n');
+        }
+        return changeItem;
+    };
 
+    const rows = [];
     this.__loader.forEachItem((itemBase) => rows.push([
         parseInt(itemBase.id),
         itemBase.mergeId,
@@ -143,7 +165,7 @@ DataBrowser.prototype.setItemTable = function DataBrowser_setItemTable() {
         itemBase.moneyPrice,
         itemBase.recycle,
         itemBase.stackNumber,
-        itemBase.changeItem,
+        formatChangeItem(this.__loader, itemBase.changeItem),
         itemBase.class,
         itemBase.comment,
         itemBase.effectValue,
@@ -197,7 +219,7 @@ DataBrowser.prototype.setAchievementTable = function DataBrowser_setAchievementT
         achievement.tarInfo,
         achievement.comment,
         achievement.display,
-        Array.from(achievement.fin, (x) => concat(x.tar, '/', x.cnt, '/', x.tar)).join('\n'),
+        Array.from(achievement.fin, (x) => concat(x.type, '/', x.cnt, '/', x.tar)).join('\n'),
         achievement.allfin,
     ]));
 
@@ -228,7 +250,9 @@ DataBrowser.prototype.setQuestTable = function DataBrowser_setQuestTable() {
         quest.open,
         quest.type,
         quest.name,
-        quest.item,
+        Array.from(
+            quest.item.filter((x) => x),
+            (x) => getProperty(this.__loader.getItem(x), 'name', x)),
         quest.money,
         quest.startTime,
         quest.endTime,
@@ -257,7 +281,107 @@ DataBrowser.prototype.setQuestTable = function DataBrowser_setQuestTable() {
     this.__table.setColumnSelector(document.getElementById('data-browser-column-selector'));
 };
 
-DataBrowser.prototype.setSpecialItemTable = function DataBrowser_setSpecialItemTable() {
+DataBrowser.prototype.setSpecialItemTable = function DataBrowser_setSpecialItemTable() { 
+    /**
+     * format items
+     * @param {BgrXmlLoader} loader 
+     * @param {BgrXmlSpecialItem[]} spitems
+     */
+    const formatItem = function(loader, spitems) {
+        if (spitems.length) {
+            /*
+             * concat all items in spitem 
+             */
+            let items = [];
+            for (let spitem of spitems) {
+                items.push(...spitem.item)
+            }
+            sortBy(items, 'probability', false);
+
+            /*
+             * sum total probability 
+             */
+            let totalProb = 0;
+            for (let item of items) {
+                if (item.probability) {
+                    totalProb += parseInt(item.probability);
+                }
+            }
+
+            /*
+             * make item name string 
+             */
+            const ret = [];
+            for (let i of items) {
+                const unit = loader.getUnitBase(i.content);
+                const item = loader.getItem(i.content);
+                let prob;
+                if (100 <= totalProb) {
+                        prob = concat('(', parseInt(i.probability / totalProb * 10000) / 100, '%)');
+                }
+                else if (totalProb && i.probability) {
+                    prob = concat('(', i.probability, ')');
+                }
+                else {
+                    prob = '';
+                }
+                if (item) {
+                    ret.push(item.name + prob);
+                }
+                else if (unit) {
+                    ret.push(unit.name + prob);
+                }
+                else if (i.content) {
+                    ret.push(i.content + prob);
+                }
+            }
+
+            return ret.join('\n');
+        }
+        return item;
+    }
+
+    /** @type {Map<number, BgrXmlSpecialItem[]} */
+    const groupMap = new Map();
+    this.__loader.forEachSpecialItem(function(spitem) {
+        const groupId = spitem.group || spitem.id;
+        if (!groupMap.has(groupId)) {
+            groupMap.set(groupId, []);
+        }
+
+        if (spitem.sp_val) {
+            groupMap.get(groupId).unshift(spitem);
+        }
+        else {
+            groupMap.get(groupId).push(spitem);
+        }
+    });
+
+    const rows = [];
+    groupMap.forEach((spitems) => rows.push([
+        parseInt(spitems[0].group || spitems[0].id),
+        Array.from(spitems, (x) => x.id).join('\n'),
+        spitems[0].name,
+        spitems[0].comment,
+        formatItem(this.__loader, spitems),
+        spitems[0].sp_num1,
+        spitems[0].sp_num2,
+        spitems[0].sp_val,
+    ]));
+
+    this.__table.update([
+            'グループID',
+            'ID',
+            '名前',
+            '説明',
+            'アイテム',
+            'SP数1',
+            'SP数2',
+            'SP値',
+        ],
+        rows);
+
+    this.__table.setColumnSelector(document.getElementById('data-browser-column-selector'));
 };
 
 /**
