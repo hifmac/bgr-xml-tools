@@ -66,6 +66,7 @@ BgrXmlLoader.prototype.loadXml = function BgrXmlLoader_loadXml(xml) {
         this.__skillBaseMap = this.mapElementsByTagName(bgrxml, 'skill', BgrXmlSkillBase);
         this.__equipBaseMap = this.mapElementsByTagName(bgrxml, 'equip', BgrXmlEquipBase);
         this.__bufferBaseMap = this.mapElementsByTagName(bgrxml, 'buff', BgrXmlBufferBase);
+        this.__itemMap = this.mapElementsByTagName(bgrxml, 'buff', BgrXmlItem);
         this.__specialItemMap = this.mapElementsByTagName(bgrxml, 'specialitem', BgrXmlElementHook);
         this.__achievementMap = this.mapElementsByTagName(bgrxml, 'achievement', BgrXmlElementHook);
         this.__questMap = this.mapElementsByTagName(bgrxml, 'quest', BgrXmlElementHook);
