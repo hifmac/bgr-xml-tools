@@ -14,7 +14,7 @@ import { DataBrowser } from './databrowser.js'
 onload = function() {
     const dmglog = new DamageLog();
     const dataBrowser = new DataBrowser();
-    const stageBrowser = new StageBrowser();
+    //const stageBrowser = new StageBrowser();
 
     /** @type {HTMLInputElement} */
     const xmlFile = document.getElementById('xml-file');
@@ -30,7 +30,7 @@ onload = function() {
                     xmlFileLabel.textContent = file.name + ' [OK]';
                     dmglog.setLoader(loader);
                     dataBrowser.setLoader(loader);
-                    stageBrowser.setLoader(loader);
+                    //stageBrowser.setLoader(loader);
                 }
                 else {
                     xmlFileLabel.textContent = 'ファイルが間違っているか壊れています';
