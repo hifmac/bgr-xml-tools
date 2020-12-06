@@ -9,7 +9,7 @@ import { BgrXmlLoader } from './bgr/bgr.xml.js'
 import { readFile } from './bgr/bgr.util.js'
 import { DamageLog } from './dmglog.js'
 import { DataBrowser } from './databrowser.js'
-import { StageBrowser } from './stagebrowser.js'
+//import { StageBrowser } from './stagebrowser.js'
 
 onload = function() {
     const dmglog = new DamageLog();
