@@ -5,7 +5,7 @@
  * @license MIT-License
  */
 
-import { BgrXmlLoader, BgrXmlStage } from './bgr/bgr.xml.js'
+import { BgrXmlCharacter, BgrXmlLoader, BgrXmlStage } from './bgr/bgr.xml.js'
 import {
     concat,
     rankNumber2String,
@@ -39,6 +39,9 @@ DataBrowser.prototype.onDataTypeChanged = function DataBrowser_onDataTypeChanged
     switch (this.__dataBrowserType.value) {
     case 'unit':
         this.setUnitTable(this.__level.value);
+        break;
+    case 'character':
+        this.setCharacterTable();
         break;
     case 'equip':
         this.setEquipTable(this.__level.value);
@@ -134,6 +137,91 @@ DataBrowser.prototype.setUnitTable = function DataBrowser_setUnitTable(level) {
             new Table.Column('移動速度', Table.columnType.NUM),
             new Table.SystemColumn('自殺時間', Table.columnType.NUM),
             new Table.SystemColumn('自殺HP', Table.columnType.NUM),
+        ],
+        rows);
+
+    this.__table.setColumnSelector(document.getElementById('data-browser-column-selector'));
+}
+
+DataBrowser.prototype.setCharacterTable = function DataBrowser_setCharacterTable() {
+    /**
+     * format gp talk
+     * @param {BgrXmlCharacter} character 
+     */
+    const formatGpTalk = function(character) {
+        const ret = [];
+    
+        let num = 1;
+        for (let talk of character.basegptalk) {
+            if (talk) {
+                ret.push(concat(num, '：「', talk , '」'));
+            }
+            ++num;
+        }
+
+        num = 4;
+        for (let talk of character.addgptalk) {
+            if (talk) {
+                ret.push(concat(num, '：「', talk , '」'));
+            }
+            ++num;
+        }
+
+        return ret.join('\n');
+    };
+
+        /**
+     * format skill talk
+     * @param {BgrXmlCharacter} character 
+     */
+    const formatSkillTalk = function(character) {
+        const ret = [];
+    
+        let num = 1;
+        for (let talk of character.skillTalk) {
+            if (talk) {
+                ret.push(concat(num++, '：「', talk , '」'));
+            }
+        }
+
+        return ret.join('\n');
+    };
+
+    const rows = [];
+    this.__loader.forEachCharacter(function(character) {
+        rows.push([
+            character.id,
+            character.open,
+            character.type,
+            character.name,
+            character.cv,
+            character.artist,
+            character.skinOnly ? '〇' : '',
+            character.comment,
+            formatGpTalk(character),
+            formatSkillTalk(character),
+            character.marryTalk,
+            character.sportsTalk,
+            character.resource,
+            character.bossBattleBonus,
+        ]);
+    });
+
+    this.__table.update([
+            new Table.Column('ID', Table.columnType.NUM),
+            new Table.Column('開放'),
+            new Table.Column('種類'),
+            new Table.Column('名前'),
+            new Table.Column('ユニット名'),
+            new Table.Column('アーティスト'),
+            new Table.Column('スキンキャラ'),
+            new Table.Column('説明'),
+            new Table.Column('タッチボイス'),
+            new Table.Column('スキルボイス'),
+            new Table.Column('結婚'),
+            new Table.Column('体育祭'),
+            new Table.SystemColumn('リソース'),
+            new Table.SystemColumn('ボスバトルボーナス'),
         ],
         rows);
 

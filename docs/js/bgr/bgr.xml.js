@@ -111,6 +111,15 @@ BgrXmlLoader.prototype.forEachUnitBase = function BgrXmlLoader_forEachUnitBase(f
 };
 
 /**
+ * call functor for each character
+ * @param {function(BgrXmlCharacter): void} f functor
+ */
+BgrXmlLoader.prototype.forEachCharacter = function BgrXmlLoader_forEachCharacter(f) {
+    this.forEach(this.__characterMap, f);
+};
+
+
+/**
  * call functor for each equip
  * @param {function(BgrXmlEquipBase): void} f functor
  */
@@ -427,7 +436,7 @@ export function BgrXmlItem(node) {
         this.changeItem = changeItem;
     }
 
-    this.class = node.getAttribute('class');
+    this.class = translate(node.getAttribute('class'));
     this.comment = node.getAttribute('comment');
     this.effectValue = node.getAttribute('effect_val');
 
@@ -447,7 +456,7 @@ export function BgrXmlItem(node) {
  */
 export function BgrXmlCharacter(node) {
     this.id = node.getAttribute('id');
-    this.type = node.getAttribute('type');
+    this.type = translate(node.getAttribute('type'));
     this.open = node.getAttribute('open');
     this.pictureId = node.getAttribute('picid');
     this.iconAtlas = node.getAttribute('icon_atlas');

@@ -99,11 +99,35 @@ export function sortBy(array, param, asc=true) {
 
 /**
  * translate Chinese to Japanese hopefully
- * @param {string} str 
+ * @param {string} str
+ * @returns {string} translated string
  */
-export function translate(str) {
-    return str ? str.replace('集換證書', '交換チケット') : null;
-}
+export const translate = (function() {
+    const WORDS = {
+        '英雄': 'ユニット',
+        '雜物': 'その他',
+        '消耗': '消耗品',
+        '角色': 'キャラ',
+        '對話角色': 'シナリオキャラ',
+    };
+
+    const FRAGMENTS = [
+        [ '集換證書', '交換チケット' ],
+    ];
+
+    return function (str) {
+        if (str in WORDS) {
+            return WORDS[str];
+        }
+        
+        if (str) {
+            for (let fragment of FRAGMENTS) {
+                str = str.replace(fragment[0], fragment[1]);
+            }
+        }
+        return str
+    };
+}());
 
 /**
  * compare 2 objects shallow
