@@ -188,13 +188,13 @@ DamageLog.prototype.createDamageLog = function DamageLog_createDamageLog(action_
     }
 
     this.__logTable.update([
-            'ダメージ',
-            'SP',
-            '自動出撃',
-            '自動スキル',
-            'ユニット',
-            'スキル',
-            'アクション',
+            new Table.Column('ダメージ', Table.columnType.NUM),
+            new Table.Column('SP', Table.columnType.NUM),
+            new Table.Column('自動出撃'),
+            new Table.Column('自動スキル'),
+            new Table.Column('ユニット'),
+            new Table.Column('スキル'),
+            new Table.Column('アクション'),
         ],
         rows
     );
@@ -296,13 +296,13 @@ DamageLog.prototype.createUnitLog = function DamageLog_createCharacterLog(action
     }
 
     this.__logPerUnitTable.update([
-            'ユニット',
-            '与ダメ',
-            '回数(CRIT/通常)',
-            '被ダメ',
-            '回数(CRIT/通常)',
-            '装備',
-            'バフ',
+            new Table.Column('ユニット'),
+            new Table.Column('与ダメ', Table.columnType.NUM),
+            new Table.Column('回数(CRIT/通常)'),
+            new Table.Column('被ダメ', Table.columnType.NUM),
+            new Table.Column('回数(CRIT/通常)'),
+            new Table.Column('装備'),
+            new Table.Column('バフ'),
         ],
         rows);
 }

@@ -243,7 +243,7 @@ export function rankNumber2String(ranknum) {
  * @param {*} defval 
  */
 export function getProperty(object, prop, defval) {
-    return object ? object[prop] : defval;
+    return object && prop in object ? object[prop] : defval;
 }
 
 /**

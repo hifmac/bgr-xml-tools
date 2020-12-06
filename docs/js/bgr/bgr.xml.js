@@ -159,6 +159,14 @@ BgrXmlLoader.prototype.forEachSpecialItem = function BgrXmlLoader_forEachSpecial
 };
 
 /**
+ * call functor for each stage
+ * @param {function(BgrXmlStage): void} f functor
+ */
+BgrXmlLoader.prototype.forEachStage = function BgrXmlLoader_forEachStage(f) {
+    this.forEach(this.__stageMap, f);
+};
+
+/**
  * call functor for each item
  * @param {function(BgrXmlItem): void} f functor
  */
@@ -168,11 +176,11 @@ BgrXmlLoader.prototype.forEachItem = function BgrXmlLoader_forEachItem(f) {
 
 BgrXmlLoader.prototype.getUnitBase = function BgrXmlLoader_getUnitBase(unitId) {
     return this.__unitBaseMap.get(String(unitId));
-}
+};
 
 BgrXmlLoader.prototype.getEquipBase = function BgrXmlLoader_getEquipBase(equipId) {
     return this.__equipBaseMap.get(String(equipId));
-}
+};
 
 BgrXmlLoader.prototype.getUnitBaseBySkillID = function BgrXmlLoader_getUnitBase(skillId) {
     skillId = String(skillId);
@@ -191,19 +199,39 @@ BgrXmlLoader.prototype.getUnitBaseBySkillID = function BgrXmlLoader_getUnitBase(
         }
     }
     return candidate;
-}
+};
 
 BgrXmlLoader.prototype.getSkillBase = function BgrXmlLoader_getSkillBase(skillId) {
     return this.__skillBaseMap.get(String(skillId));
-}
+};
 
 BgrXmlLoader.prototype.getBufferBase = function BgrXmlLoader_getBufferBase(bufferId) {
     return this.__bufferBaseMap.get(String(bufferId));
-}
+};
 
 BgrXmlLoader.prototype.getItem = function BgrXmlLoader_getItem(itemid) {
     return this.__itemMap.get(String(itemid));
-}
+};
+
+BgrXmlLoader.prototype.getStage = function BgrXmlLoader_getStage(stageid) {
+    return this.__stageMap.get(String(stageid));
+};
+
+BgrXmlLoader.prototype.getStageListByStageId = function BgrXmlLoader_getStageList(stageid) {
+    return this.__stageListMap.get(String(stageid / 100 | 0));
+};
+
+BgrXmlLoader.prototype.getStageAreaByStageId = function BgrXmlLoader_getStageArea(stageid) {
+    return this.__stageAreaMap.get(String(stageid / 10000 | 0));
+};
+
+BgrXmlLoader.prototype.getStageGroup = function BgrXmlLoader_getStageGroup(stagegroupid) {
+    return this.__stageGroupMap.get(String(stagegroupid));
+};
+
+BgrXmlLoader.prototype.getChapterGroup = function BgrXmlLoader_getChapterGroup(chaptergroupid) {
+    return this.__chapterGroupMap.get(String(chaptergroupid));
+};
 
 /**
  * @constructor BGR unit base
@@ -585,10 +613,10 @@ export function BgrXmlStage(node) {
     
     ];
     this.item_rate = {
-        s: node.getAttribute('item_rate_s'),
-        a: node.getAttribute('item_rate_a'),
-        b: node.getAttribute('item_rate_b'),
-        c: node.getAttribute('item_rate_c'),
+        s: this.splitItemRate(node.getAttribute('item_rate_s')),
+        a: this.splitItemRate(node.getAttribute('item_rate_a')),
+        b: this.splitItemRate(node.getAttribute('item_rate_b')),
+        c: this.splitItemRate(node.getAttribute('item_rate_c')),
     };
     this.mainEnemyGo = node.getAttribute('main_enemy_go');
     this.enemyGo = node.getAttribute('enemy_go');
@@ -620,6 +648,29 @@ export function BgrXmlStage(node) {
     this.limitPerDay = node.getAttribute('limit_per_day');
     this.rightMapBuffer = node.getAttribute('right_map_buff');
 }
+
+/**
+ * splite item rate string
+ * @param {string} itemRate 
+ * @return {{
+ *     probability: number,
+ *     itemId: number,
+ *     numOfItems: number,  
+ * }[]}
+ */
+BgrXmlStage.prototype.splitItemRate = function BgrXmlStage_splitItemRate(itemRate) {
+    if (itemRate) {
+        return Array.from(itemRate.split('/'), function(x) {
+            const params = x.split('#');
+            return {
+                probability: params[0],
+                itemId: params[1],
+                numOfItems: params[2],
+            };
+        });
+    }
+    return [];
+};
 
 /**
  * @constructor BGR XML stage list

@@ -5,7 +5,7 @@
  * @license MIT-License
  */
 
-import { BgrXmlLoader } from './bgr/bgr.xml.js'
+import { BgrXmlLoader, BgrXmlStage } from './bgr/bgr.xml.js'
 import {
     concat,
     rankNumber2String,
@@ -19,6 +19,10 @@ export function DataBrowser() {
     /** @type {HTMLSelectElement} */
     this.__dataBrowserType = document.getElementById('data-browser-type');
     this.__dataBrowserType.addEventListener('change', this.onDataTypeChanged.bind(this));
+
+    /** @type {HTMLInputElement} */
+    this.__level = document.getElementById('data-browser-level');
+    this.__level.addEventListener('change', this.onLevelChanged.bind(this));
 
     /** @type {(BgrXmlLoader | null)} */
     this.__loader = null;
@@ -34,10 +38,10 @@ DataBrowser.prototype.onDataTypeChanged = function DataBrowser_onDataTypeChanged
 
     switch (this.__dataBrowserType.value) {
     case 'unit':
-        this.setUnitTable();
+        this.setUnitTable(this.__level.value);
         break;
     case 'equip':
-        this.setEquipTable();
+        this.setEquipTable(this.__level.value);
         break;
     case 'skill':
         break;
@@ -61,78 +65,124 @@ DataBrowser.prototype.onDataTypeChanged = function DataBrowser_onDataTypeChanged
     }
 };
 
-DataBrowser.prototype.setUnitTable = function DataBrowser_setUnitTable() {
+DataBrowser.prototype.onLevelChanged = function DataBrowser_onLevelChanged() {
+    if (!this.__loader) {
+        alert('XMLがないのじゃ！');
+        return 
+    }
+
+    switch (this.__dataBrowserType.value) {
+    case 'unit':
+        this.setUnitTable(this.__level.value);
+        break;
+    case 'equip':
+        this.setEquipTable(this.__level.value);
+        break;
+    case 'skill':
+        break;
+    case 'buffer':
+        break;
+    }
+};
+
+DataBrowser.prototype.setUnitTable = function DataBrowser_setUnitTable(level) {
     const rows = [];
 
     this.__loader.forEachUnitBase(function(unitBase) {
+        const maxLevel = parseInt(getProperty(unitBase, 'maxLv', 0)) + 20;
+        const unitLevel = Math.max(1, level < 0 ? maxLevel : level) - 1;
         rows.push([
-            parseInt(unitBase.id),
-            parseInt(unitBase.groupId),
+            unitBase.id,
+            unitBase.groupId,
             unitBase.name,
             isTrue(unitBase.bgRank) ? 'BG' : rankNumber2String(parseInt(unitBase.rank)),
             unitBase.maxLv,
             unitBase.attribute,
             unitBase.summonCooldown,
-            concat(unitBase.hp, unitBase.hpRate ? concat('(' , unitBase.hpRate, ')') : ''),
-            concat(unitBase.attack, unitBase.attackRate ? concat('(' , unitBase.attackRate, ')') : ''),
-            concat(unitBase.speed, unitBase.speedRate ? concat('(' , unitBase.speedRate, ')') : ''),
-            concat(unitBase.defense, unitBase.defenseRate ? concat('(' , unitBase.defenseRate, ')') : ''),
+            parseInt(unitBase.hp) + getProperty(unitBase, 'hpRate', 0) * unitLevel | 0,
+            unitBase.hpRate,
+            parseInt(unitBase.attack) + getProperty(unitBase, 'attackRate', 0) * unitLevel | 0,
+            unitBase.attackRate,
+            parseInt(unitBase.speed) + getProperty(unitBase, 'speedRate', 0) * unitLevel | 0,
+            unitBase.speedRate,
+            parseInt(unitBase.defense) + getProperty(unitBase, 'defenseRate', 0) * unitLevel | 0,
+            unitBase.defenseRate,
             concat(parseInt(unitBase.critical * 1000) / 10, '%'),
             unitBase.move,
+            unitBase.suicideTime,
+            unitBase.suicideHp,
         ]);
     });
 
     this.__table.update([
-            'ID',
-            'キャラID',
-            '名前',
-            'ランク',
-            '最大レベル',
-            '所属',
-            '召喚CD',
-            'HP',
-            '攻撃力',
-            '攻撃速度',
-            '防御力',
-            'クリティカル',
-            '移動速度',
+            new Table.Column('ID', Table.columnType.NUM),
+            new Table.Column('キャラID', Table.columnType.NUM),
+            new Table.Column('名前'),
+            new Table.Column('ランク'),
+            new Table.Column('最大レベル', Table.columnType.NUM),
+            new Table.Column('所属'),
+            new Table.Column('召喚CD', Table.columnType.NUM),
+            new Table.Column('HP', Table.columnType.NUM),
+            new Table.SystemColumn('HP(成長)', Table.columnType.NUM),
+            new Table.Column('攻撃力', Table.columnType.NUM),
+            new Table.SystemColumn('攻撃力(成長)', Table.columnType.NUM),
+            new Table.Column('攻撃速度', Table.columnType.NUM),
+            new Table.SystemColumn('攻撃速度(成長)', Table.columnType.NUM),
+            new Table.Column('防御力', Table.columnType.NUM),
+            new Table.SystemColumn('防御力(成長)', Table.columnType.NUM),
+            new Table.Column('クリティカル', Table.columnType.NUM_FMT),
+            new Table.Column('移動速度', Table.columnType.NUM),
+            new Table.SystemColumn('自殺時間', Table.columnType.NUM),
+            new Table.SystemColumn('自殺HP', Table.columnType.NUM),
         ],
         rows);
 
     this.__table.setColumnSelector(document.getElementById('data-browser-column-selector'));
 }
 
-DataBrowser.prototype.setEquipTable = function DataBrowser_setEquipTable() {
+DataBrowser.prototype.setEquipTable = function DataBrowser_setEquipTable(level) {
     const rows = [];
-
-    this.__loader.forEachEquipBase((equipBase) => rows.push([
-        parseInt(equipBase.id),
-        this.__loader.getItem(equipBase.id).name,
-        equipBase.open,
-        equipBase.over,
-        equipBase.rank,
-        equipBase.baseLvMax,
-        concat(equipBase.hp, equipBase.hpRate ? concat('(' , equipBase.hpRate, ')') : ''),
-        concat(equipBase.attack, equipBase.attackRate ? concat('(' , equipBase.attackRate, ')') : ''),
-        concat(equipBase.speed, equipBase.speedRate ? concat('(' , equipBase.speedRate, ')') : ''),
-        concat(equipBase.defense, equipBase.defenseRate ? concat('(' , equipBase.defenseRate, ')') : ''),
-        concat(parseInt(equipBase.critical * 1000) / 10, '%'),
-        equipBase.move,
-    ]));
+    const loader = this.__loader;
+    this.__loader.forEachEquipBase(function(equipBase) {
+        const maxLevel = parseInt(getProperty(equipBase, 'baseLvMax', 0)) + parseInt(getProperty(equipBase, 'over', 0)) * 5;
+        const equipLevel = level < 0 ? maxLevel : level;
+        rows.push([
+            equipBase.id,
+            loader.getItem(equipBase.id).name,
+            equipBase.open,
+            equipBase.over,
+            equipBase.rank,
+            equipBase.baseLvMax,
+            parseInt(equipBase.hp) + getProperty(equipBase, 'hpRate') * equipLevel | 0,
+            equipBase.hpRate,
+            parseInt(equipBase.attack) + getProperty(equipBase, 'attackRate') * equipLevel | 0,
+            equipBase.attackRate,
+            parseInt(equipBase.speed) + getProperty(equipBase, 'speedRate') * equipLevel | 0,
+            equipBase.speedRate,
+            parseInt(equipBase.defense) + getProperty(equipBase, 'defenseRate') * equipLevel | 0,
+            equipBase.defenseRate,
+            concat(parseInt(equipBase.critical * 1000) / 10, '%'),
+            equipBase.move,
+        ])
+    });
 
     this.__table.update([
-            'ID',
-            '名前',
-            '開放',
-            '上限解放',
-            'ランク',
-            'ベース最大レベル',
-            'HP',
-            '攻撃力',
-            '攻撃速度',
-            '防御力',
-            'クリティカル',
-            '移動速度',
+            new Table.Column('ID', Table.columnType.NUM),
+            new Table.Column('名前'),
+            new Table.Column('開放'),
+            new Table.Column('上限解放', Table.columnType.NUM),
+            new Table.Column('ランク'),
+            new Table.Column('基本最大レベル', Table.columnType.NUM),
+            new Table.Column('HP', Table.columnType.NUM),
+            new Table.SystemColumn('HP(成長)', Table.columnType.NUM),
+            new Table.Column('攻撃力', Table.columnType.NUM),
+            new Table.SystemColumn('攻撃力(成長)', Table.columnType.NUM),
+            new Table.Column('攻撃速度', Table.columnType.NUM),
+            new Table.SystemColumn('攻撃速度(成長)', Table.columnType.NUM),
+            new Table.Column('防御力', Table.columnType.NUM),
+            new Table.SystemColumn('防御力(成長)', Table.columnType.NUM),
+            new Table.Column('クリティカル', Table.columnType.NUM_FMT),
+            new Table.Column('移動速度', Table.columnType.NUM),
         ],
         rows);
 
@@ -179,26 +229,26 @@ DataBrowser.prototype.setItemTable = function DataBrowser_setItemTable() {
     ]));
 
     this.__table.update([
-            'ID',
-            'マージID',
-            '名前',
-            '開放',
-            'ランク',
-            'グループ',
-            '価格',
-            'リサイクル',
-            'スタック',
-            '変化アイテム',
-            'クラス',
-            '説明',
-            '効果値',
-            'goWindow',
-            'windowId',
-            'spPresentStart',
-            'spPresentEnd',
-            'SP値1',
-            'SP値2',
-            'スペシャルプレゼント'
+            new Table.Column('ID', Table.columnType.NUM),
+            new Table.SystemColumn('マージID', Table.columnType.NUM),
+            new Table.Column('名前'),
+            new Table.Column('開放'),
+            new Table.Column('ランク'),
+            new Table.Column('グループ'),
+            new Table.Column('価格', Table.columnType.NUM),
+            new Table.Column('リサイクル'),
+            new Table.Column('スタック', Table.columnType.NUM),
+            new Table.Column('変化アイテム'),
+            new Table.Column('クラス'),
+            new Table.Column('説明'),
+            new Table.SystemColumn('効果値', Table.columnType.NUM),
+            new Table.SystemColumn('goWindow'),
+            new Table.SystemColumn('windowId'),
+            new Table.SystemColumn('spPresentStart'),
+            new Table.SystemColumn('spPresentEnd'),
+            new Table.SystemColumn('SP値1', Table.columnType.NUM),
+            new Table.SystemColumn('SP値2', Table.columnType.NUM),
+            new Table.SystemColumn('スペシャルプレゼント'),
         ],
         rows);
 
@@ -224,18 +274,18 @@ DataBrowser.prototype.setAchievementTable = function DataBrowser_setAchievementT
     ]));
 
     this.__table.update([
-            'ID',
-            'グループID',
-            '開放',
-            '名前',
-            '種類',
-            'レベル',
-            '栄誉石',
-            '条件',
-            '説明',
-            'display',
-            'fin',
-            'allfin',
+            new Table.Column('ID', Table.columnType.NUM),
+            new Table.Column('グループID', Table.columnType.NUM),
+            new Table.Column('開放'),
+            new Table.Column('名前'),
+            new Table.Column('種類'),
+            new Table.Column('レベル', Table.columnType.NUM),
+            new Table.Column('栄誉石', Table.columnType.NUM),
+            new Table.Column('条件'),
+            new Table.Column('説明'),
+            new Table.SystemColumn('display'),
+            new Table.SystemColumn('fin'),
+            new Table.SystemColumn('allfin'),
         ],
         rows);
 
@@ -263,18 +313,18 @@ DataBrowser.prototype.setQuestTable = function DataBrowser_setQuestTable() {
     ]));
 
     this.__table.update([
-            'ID',
-            '開放',
-            '種類',
-            '名前',
-            'アイテム',
-            'シルバ',
-            '開始時間',
-            '終了時間',
-            '曜日',
-            '説明',
-            '大遠征グループID',
-            'specialActId',
+            new Table.Column('ID', Table.columnType.NUM),
+            new Table.Column('開放'),
+            new Table.Column('種類'),
+            new Table.Column('名前'),
+            new Table.Column('アイテム'),
+            new Table.Column('シルバ', Table.columnType.NUM),
+            new Table.Column('開始時間', Table.columnType.DATE),
+            new Table.Column('終了時間', Table.columnType.DATE),
+            new Table.Column('曜日'),
+            new Table.Column('説明'),
+            new Table.SystemColumn('大遠征グループID', Table.columnType.NUM),
+            new Table.SystemColumn('specialActId', Table.columnType.NUM),
         ],
         rows);
 
@@ -341,6 +391,9 @@ DataBrowser.prototype.setSpecialItemTable = function DataBrowser_setSpecialItemT
         return item;
     }
 
+    /*
+     * aggregate by group id
+     */
     /** @type {Map<number, BgrXmlSpecialItem[]} */
     const groupMap = new Map();
     this.__loader.forEachSpecialItem(function(spitem) {
@@ -357,6 +410,9 @@ DataBrowser.prototype.setSpecialItemTable = function DataBrowser_setSpecialItemT
         }
     });
 
+    /*
+     * make a table by spitem group
+     */
     const rows = [];
     groupMap.forEach((spitems) => rows.push([
         parseInt(spitems[0].group || spitems[0].id),
@@ -370,19 +426,124 @@ DataBrowser.prototype.setSpecialItemTable = function DataBrowser_setSpecialItemT
     ]));
 
     this.__table.update([
-            'グループID',
-            'ID',
-            '名前',
-            '説明',
-            'アイテム',
-            'SP数1',
-            'SP数2',
-            'SP値',
+            new Table.Column('グループID', Table.columnType.NUM),
+            new Table.Column('ID', Table.columnType.NUM),
+            new Table.Column('名前'),
+            new Table.Column('説明'),
+            new Table.Column('アイテム'),
+            new Table.SystemColumn('SP数1', Table.columnType.NUM),
+            new Table.SystemColumn('SP数2', Table.columnType.NUM),
+            new Table.SystemColumn('SP値', Table.columnType.NUM),
         ],
         rows);
 
     this.__table.setColumnSelector(document.getElementById('data-browser-column-selector'));
 };
+
+DataBrowser.prototype.setStageTable = function DataBrowser_setStageTable() {
+    /**
+     * format find stage 
+     * @param {BgrXmlLoader} loader
+     * @param {BgrXmlStage} stage 
+     */
+    const formatFind = function(loader, stage) {
+        const findStage = loader.getItem(stage.findStage);
+        if (findStage) {
+            return concat(findStage.name, '(', stage.findProbability * 100 | 0, '%)');
+        }
+        return '';
+    };
+
+    /**
+     * format cost item 
+     * @param {BgrXmlLoader} loader
+     * @param {BgrXmlStage} stage 
+     */
+    const formatCostItem = function(loader, stage) {
+        const item = loader.getItem(stage.costItemId);
+        if (item) {
+            return concat(item.name, ' x', stage.costItemNum);
+        }
+        return '';
+    };
+
+    /**
+     * format item rate
+     * @param {BgrXmlLoader} loader
+     * @param {{
+     *     probability: number,
+     *     itemId: number,
+     *     numOfItems: number,
+     * }[]} itemRate 
+     */
+    const formatItemRate = function(loader, itemRate) {
+        const ret = [];
+        for (let i of itemRate) {
+            const item = loader.getItem(i.itemId);
+            if (item) {
+                ret.push(concat(100 * i.probability | 0, '%: ', item.name, ' x', i.numOfItems));
+            }
+            else {
+                console.log(concat('Unknown item id: ', i.itemId));
+            }
+        }
+        return ret.join('\n');
+    };
+
+    /**
+     * format cost item 
+     * @param {BgrXmlLoader} loader
+     * @param {BgrXmlStage} stage 
+     */
+    const formatStageGroup = function(loader, stage) {
+        const area = loader.getStageAreaByStageId(stage.id);
+        if (area) {
+            return getProperty(loader.getStageGroup(area.groupId), 'name', '');
+        }
+        return '';
+    };
+
+
+    const rows = [];
+    this.__loader.forEachStage((stage) => rows.push([
+        stage.id,
+        stage.open,
+        formatStageGroup(this.__loader, stage),
+        getProperty(this.__loader.getStageAreaByStageId(stage.id), 'name', ''),
+        getProperty(this.__loader.getStageListByStageId(stage.id), 'name', ''),
+        stage.name,
+        stage.comment,
+        stage.costAP,
+        formatCostItem(this.__loader, stage),
+        formatFind(this.__loader, stage),
+        formatItemRate(this.__loader, stage.item_rate.s),
+        formatItemRate(this.__loader, stage.item_rate.a),
+        formatItemRate(this.__loader, stage.item_rate.b),
+        formatItemRate(this.__loader, stage.item_rate.c),
+        stage.durationTime,
+    ]));
+
+    this.__table.update([
+            new Table.Column('ID', Table.columnType.NUM),
+            new Table.Column('開放'),
+            new Table.Column('グループ'),
+            new Table.Column('エリア'),
+            new Table.Column('リスト'),
+            new Table.Column('名前'),
+            new Table.Column('説明'),
+            new Table.Column('AP', Table.columnType.NUM),
+            new Table.Column('消費アイテム'),
+            new Table.SystemColumn('発見ステージ'),
+            new Table.Column('ドロップ(S)'),
+            new Table.SystemColumn('ドロップ(A)'),
+            new Table.SystemColumn('ドロップ(B)'),
+            new Table.SystemColumn('ドロップ(C)'),
+            new Table.SystemColumn('ステージ時間'),
+        ],
+        rows);
+
+    this.__table.setColumnSelector(document.getElementById('data-browser-column-selector'));
+}
 
 /**
  * set loader
@@ -390,4 +551,5 @@ DataBrowser.prototype.setSpecialItemTable = function DataBrowser_setSpecialItemT
  */
 DataBrowser.prototype.setLoader = function DataBrowser_setLoader(loader) {
     this.__loader = loader;
+    this.onDataTypeChanged();
 };

@@ -4,13 +4,17 @@
         <meta charset="UTF-8"> 
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
-        <!-- DataTables -->
-        <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.22/css/jquery.dataTables.css">    
-
         <!-- Bootstrap CSS -->
         <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
 
-        <!-- BGR module -->
+        <!-- DataTables CSS -->
+        <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.22/css/jquery.dataTables.css">    
+
+        <!-- Bootstrap treeview CSS
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-treeview@1.2.0/src/css/bootstrap-treeview.css" integrity="sha256-QsqWy4qg++WE4aOGfR94xKzQy0hWvW9XhrT0z/HYJjA=" crossorigin="anonymous">
+         -->
+
+        <!-- BGR module and CSS -->
         <link rel="stylesheet" href="css/xmltools.css">
         <script src="js/xmltools.js" type="module"></script>
 
@@ -36,8 +40,9 @@
                 </li>
             </ul>
 
-            <div class="tab-content">
-                <div class="tab-pane fade p-2 active show" id="damage-log">
+            <div class="tab-content p-2">
+                <!-- Damage Log pane -->
+                <div class="tab-pane fade active show" id="damage-log">
                     <div class="custom-file p-2 mb-2">
                         <input type="file" class="custom-file-input" id="damage-log-file">
                         <label class="custom-file-label" for="damage-log-file" id="damage-log-file-label">ログファイル</label>
@@ -67,51 +72,59 @@
                         </div>
                     </div>
                 </div>
+                <!-- Damage Log pane -->
 
-                <div class="tab-pane fade p-2" id="data-browser">
-                    <div class="form-group form-inline mb-2">
-                        <label for="data-browser-type">種類：</label>
-                        <select class="form-control" id="data-browser-type">
-                            <option value="none">--</option>
-                            <option value="unit">ユニット</option>
-                            <option value="equip">装備</option>
-                            <option value="skill">スキル</option>
-                            <option value="buffer">バフ</option>
-                            <option value="item">アイテム</option>
-                            <option value="specialitem">特殊アイテム</option>
-                            <option value="stage">ステージ</option>
-                            <option value="quest">クエスト</option>
-                            <option value="achievement">称号</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <div class="form-group form-inline mb-2" id='data-browser-column-selector'>
+                <!-- Data Browser pane -->
+                <div class="tab-pane fade" id="data-browser">
+                    <div class="border p-2 mb-2">
+                        <div class="form-group form-inline">
+                            <label for="data-browser-type">種類：</label>
+                            <select class="form-control mr-2" id="data-browser-type">
+                                <option value="none">--</option>
+                                <option value="unit">ユニット</option>
+                                <option value="character">キャラクター</option>
+                                <option value="equip">装備</option>
+                                <option value="skill">スキル</option>
+                                <option value="buffer">バフ</option>
+                                <option value="stage">ステージ</option>
+                                <option value="item">アイテム</option>
+                                <option value="specialitem">特殊アイテム</option>
+                                <option value="quest">クエスト</option>
+                                <option value="achievement">称号</option>
+                            </select>
+                            <label for="data-browser-level">レベル：</label>
+                            <input class="form-control" type="number" id="data-browser-level" value="-1"></input>
                         </div>
-                        <table class="table table-hover table-striped table-bordered" id="data-browser-table"></table>
+
+                        <div class="form-group form-inline" id='data-browser-column-selector'>
+                        </div>
                     </div>
 
+                    <table class="table table-hover table-striped table-bordered" id="data-browser-table"></table>
                 </div>
+                <!-- Data Browser pane -->
             </div>
 
         </div>
 
         <!-- Footer -->
         <footer class="page-footer font-small blue pt-4">
-            <hr/>
             <!-- Copyright -->
-            <div class="footer-copyright text-center py-3">
+            <div class="border footer-copyright text-center py-3">
                 OSS link and license notice used in this site!<br/>
-                <a href="https://getbootstrap.com/">Bootstrap</a> (C) 2020 MIT-license<br/>
+                <a href="https://getbootstrap.com/">Bootstrap</a> (C) 2020 MIT License<br/>
                 <a href="https://jquery.com/">jQuery</a> (C) 2020 The jQuery Foundation. jQuery License<br/>
                 <a href="https://popper.js.org/">popper.js</a> (C) 2020 MIT License<br/>
-                <a href="https://datatables.net/">DataTables</a> (C) 2007-2020 MIT licensed
+                <a href="https://datatables.net/">DataTables</a> (C) 2007-2020 MIT License<br/>
+                <!-- Bootstrap treeview plugin
+                <a href="https://github.com/jonmiles/bootstrap-treeview">Bootstrap treeview</a> (C) 2013 Jonathan Miles. Apache License 2.0
+                 -->
             </div>
             <!-- Copyright -->
         </footer>
         <!-- Footer -->
   
-        <!-- Optional JavaScript -->
+        <!-- Optional JavaScript for Bootstrap -->
         <!-- jQuery first, then Popper.js, then Bootstrap JS -->
         <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
         <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
@@ -119,5 +132,9 @@
 
         <!-- DataTable as jQuery plugin -->
         <script src="https://cdn.datatables.net/1.10.22/js/jquery.dataTables.js" type="text/javascript" charset="utf8" ></script>
+
+        <!-- Bootstrap treeview plugin
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap-treeview@1.2.0/src/js/bootstrap-treeview.js" integrity="sha256-izpq/OwDAp6tvbCXNMsAf2SSgYIa00N0iECiKNDMPmI=" crossorigin="anonymous"></script>        
+         -->
     </body>
 </html>

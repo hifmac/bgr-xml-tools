@@ -9,19 +9,18 @@ import {
     clearChild,
     createElement,
     Checkbox,
-    lastElement,
 } from './bgr.util.js'
 
 /**
- * create table header
- * @param {(string | number)[]} columns
+ * create empty table header
+ * @param {number} num number of columns
  * @returns {HTMLTableCaptionElement}
  */
-function createHeader(columns) {
+function createHeader(num) {
     /** @type {HTMLTableRowElement} */
     const row = document.createElement('tr');
-    for (let column of columns) {
-        row.appendChild(createElement('th', column));
+    while (row.childNodes.length < num) {
+        row.appendChild(document.createElement('th'));
     }
 
     /** @type {HTMLTableCaptionElement} */
@@ -29,7 +28,7 @@ function createHeader(columns) {
     thead.classList.add('thead-dark');
     thead.appendChild(row);
     return thead;
-};
+}
 
 /**
  * DataTables interface
@@ -52,7 +51,7 @@ export function Table(element) {
 
 /**
  * update and redraw table
- * @param {(number | string)[]} columns 
+ * @param {Table.Column[]} columns 
  * @param {(number | string)[][]} rows 
  */
 Table.prototype.update = function Table_update(columns, rows) {
@@ -63,7 +62,7 @@ Table.prototype.update = function Table_update(columns, rows) {
 
     clearChild(this.__element);
     this.__element.classList.add('table-prewrap');
-    this.__element.appendChild(createHeader(columns));
+    this.__element.appendChild(createHeader(columns.length));
 
     const lengthMenu = [ [], [] ];
     const maxLength = Math.min(1000, rows.length / 3 | 0);
@@ -81,15 +80,16 @@ Table.prototype.update = function Table_update(columns, rows) {
     lengthMenu[1].push('All');
 
     this.__dataTable = $(this.__element).DataTable({
+        columns,
         order: [ [0, 'asc'] ],
         paging: true,
         lengthMenu,
-        pageLength: rows.length < 1000 ? -1 : 1000,
+        pageLength: rows.length < 3000 ? -1 : 1000,
         pagingType: 'full_numbers',
     });
     this.__dataTable.rows.add(rows);
     this.__dataTable.draw();
-}
+};
 
 /**
  * set column selector
@@ -102,9 +102,39 @@ Table.prototype.setColumnSelector = function Table_setColumnSelector(element) {
     const tableId = this.__dataTable.table().node().id;
     for (let i = 0, length = this.__dataTable.columns().nodes().length; i < length; ++i) {
         const column = this.__dataTable.column(i);
-        const checkbox = new Checkbox(tableId + '-' + i, column.header().textContent);
+        const checkbox = new Checkbox(tableId + '-' + i, column.header().textContent, column.visible());
         checkbox.input.addEventListener('change', () => column.visible(checkbox.input.checked));
         element.appendChild(checkbox.div);
     }
 }
 
+Table.columnType = {
+    NUM: 'num',
+    NUM_FMT: 'num-fmt',
+    STRING: 'string',
+    DATE: 'date',
+}
+
+/**
+ * @constructor table column
+ * @param {string} title column title string
+ * @param {string} [type] column data type
+ */
+Table.Column = function TableColumn(title, type) {
+    this.title = title;
+    if (type) {
+        this.type = type;
+    }
+};
+
+/**
+ * @constructor system column to be hidden
+ * @param {string} title column title string
+ * @param {string} type column data type
+ */
+Table.SystemColumn = function TableSystemColumn(title, type) {
+    this.title = title;
+    this.type = type;
+    this.visible = false;
+    this.searchable = false;
+};
