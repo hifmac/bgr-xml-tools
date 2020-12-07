@@ -684,6 +684,23 @@ export function BgrXmlQuest(node) {
  * @param {Element} node 
  */
 export function BgrXmlStage(node) {
+    /**
+     * convert enemy string
+     * @param {string} enemyString 
+     */
+    const convertEnemy = function(enemyString) {
+        if (enemyString) {
+            const enemies = enemyString.split('/');
+            return Array.from(enemies.map((x) => x.split('#')), function(enemy) {
+                return {
+                    id: enemy[0],
+                    level: enemy[1],
+                    time: enemy[2],
+                };
+            });
+        }
+        return null;
+    }
     this.id = node.getAttribute('id');
     this.open = node.getAttribute('open');
     this.type = node.getAttribute('type');
@@ -703,6 +720,8 @@ export function BgrXmlStage(node) {
     this.baseCharacterExp = node.getAttribute('base_char_exp');
     this.rateCharacterExp = node.getAttribute('rate_char_exp');
     this.bgm = node.getAttribute('bgm');
+
+
     this.enemy = [
         node.getAttribute('enemy1'),
         node.getAttribute('enemy2'),
@@ -710,14 +729,14 @@ export function BgrXmlStage(node) {
         node.getAttribute('enemy4'),
         node.getAttribute('enemy5'),
     ];
-    this.enemy = [
+    this.army = Array.from([
         node.getAttribute('army1'),
         node.getAttribute('army2'),
         node.getAttribute('army3'),
         node.getAttribute('army4'),
         node.getAttribute('army5'),
-    
-    ];
+    ], convertEnemy);
+
     this.item_rate = {
         s: this.splitItemRate(node.getAttribute('item_rate_s')),
         a: this.splitItemRate(node.getAttribute('item_rate_a')),

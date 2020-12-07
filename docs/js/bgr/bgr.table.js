@@ -87,9 +87,21 @@ Table.prototype.update = function Table_update(columns, rows) {
         pageLength: rows.length < 3000 ? -1 : 1000,
         pagingType: 'full_numbers',
         autoWidth: false,
+        searchDelay: 1000,
     });
-    this.__dataTable.rows.add(rows);
-    this.__dataTable.draw();
+    this.setRows(rows);
+};
+
+/**
+ * set rows and redraw table
+ * @param {(number | string)[][]} rows 
+ */
+Table.prototype.setRows = function Table_update(rows) {
+    if (this.__dataTable) {
+        this.__dataTable.clear();
+        this.__dataTable.rows.add(rows);
+        this.__dataTable.draw();    
+    }
 };
 
 /**
@@ -118,39 +130,70 @@ Table.columnType = {
 
 /**
  * @constructor table column
- * @param {string} title column title string
- * @param {string} [type] column data type
+ * @param {{
+ *     title: string,
+ *     type: string,
+ *     visible: boolean,
+ *     searchable: boolean,
+ * }} options column options
+ * @member {string} title
+ * @member {string} type
+ * @member {boolean} visible
+ * @member {boolean} searchable
  */
-Table.Column = function TableColumn(title, type) {
-    this.title = title;
-    if (type) {
-        this.type = type;
+Table.ColumnBase = function TableColumnBase(options) {
+    this.title = options.title;
+    for (let option of [ 'type', 'visible', 'searchable' ]) {
+        if (option in options) {
+            this[option] = options[option];
+        }    
     }
 };
 
 /**
  * @constructor table column
+ * @extends TableColumnBase
+ * @param {string} title column title string
+ * @param {string} [type] column data type
+ */
+Table.Column = function TableColumn(title, type) {
+    Table.ColumnBase.call(this, { title, type, });
+};
+
+Table.Column.prototype = Object.create(Table.ColumnBase.prototype);
+
+/**
+ * @constructor table column
+ * @extends TableColumnBase
+ * @param {string} title column title string
+ * @param {string} [type] column data type
+ */
+Table.IgnoredColumn = function TableIgnoredColumn(title, type) {
+    Table.ColumnBase.call(this, { title, type, visible: false, searchable: true });
+};
+
+Table.IgnoredColumn.prototype = Object.create(Table.ColumnBase.prototype);
+
+/**
+ * @constructor table column
+ * @extends TableColumnBase
  * @param {string} title column title string
  * @param {string} [type] column data type
  */
 Table.HiddenColumn = function TableHiddenColumn(title, type) {
-    this.title = title;
-    if (type) {
-        this.type = type;
-    }
-    this.visible = false;
+    Table.ColumnBase.call(this, { title, type, visible: false, searchable: true });
 };
+
+Table.HiddenColumn.prototype = Object.create(Table.ColumnBase.prototype);
 
 /**
  * @constructor system column to be hidden
+ * @extends TableColumnBase
  * @param {string} title column title string
  * @param {string} type column data type
  */
 Table.SystemColumn = function TableSystemColumn(title, type) {
-    this.title = title;
-    if (type) {
-        this.type = type;
-    }
-    this.visible = false;
-    this.searchable = false;
+    Table.ColumnBase.call(this, { title, type, visible: false, searchable: false });
 };
+
+Table.SystemColumn.prototype = Object.create(Table.ColumnBase.prototype);

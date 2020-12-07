@@ -38,13 +38,13 @@ DataBrowser.prototype.onDataTypeChanged = function DataBrowser_onDataTypeChanged
 
     switch (this.__dataBrowserType.value) {
     case 'unit':
-        this.setUnitTable(this.__level.value);
+        this.setUnitTable();
         break;
     case 'character':
         this.setCharacterTable();
         break;
     case 'equip':
-        this.setEquipTable(this.__level.value);
+        this.setEquipTable();
         break;
     case 'skill':
         break;
@@ -76,10 +76,10 @@ DataBrowser.prototype.onLevelChanged = function DataBrowser_onLevelChanged() {
 
     switch (this.__dataBrowserType.value) {
     case 'unit':
-        this.setUnitTable(this.__level.value);
+        this.updateUnitTable();
         break;
     case 'equip':
-        this.setEquipTable(this.__level.value);
+        this.updateEquipTable();
         break;
     case 'skill':
         break;
@@ -88,9 +88,13 @@ DataBrowser.prototype.onLevelChanged = function DataBrowser_onLevelChanged() {
     }
 };
 
-DataBrowser.prototype.setUnitTable = function DataBrowser_setUnitTable(level) {
+/**
+ * make unit table rows
+ * @returns {(number | string)[][]} table rows
+ */
+DataBrowser.prototype.makeUnitData = function DataBrowser_makeUnitData() {
+    const level = this.__level.value;
     const rows = [];
-
     this.__loader.forEachUnitBase(function(unitBase) {
         const maxLevel = parseInt(getProperty(unitBase, 'maxLv', 0)) + 20;
         const unitLevel = Math.max(1, level < 0 ? maxLevel : level) - 1;
@@ -116,7 +120,10 @@ DataBrowser.prototype.setUnitTable = function DataBrowser_setUnitTable(level) {
             unitBase.suicideHp,
         ]);
     });
+    return rows;
+}
 
+DataBrowser.prototype.setUnitTable = function DataBrowser_setUnitTable(level) {
     this.__table.update([
             new Table.Column('ID', Table.columnType.NUM),
             new Table.Column('キャラID', Table.columnType.NUM),
@@ -140,9 +147,13 @@ DataBrowser.prototype.setUnitTable = function DataBrowser_setUnitTable(level) {
             new Table.SystemColumn('自殺時間', Table.columnType.NUM),
             new Table.SystemColumn('自殺HP', Table.columnType.NUM),
         ],
-        rows);
+        this.makeUnitData());
 
     this.__table.setColumnSelector(document.getElementById('data-browser-column-selector'));
+}
+
+DataBrowser.prototype.updateUnitTable = function DataBrowser_updateUnitTable() {
+    this.__table.setRows(this.makeUnitData());
 }
 
 DataBrowser.prototype.setCharacterTable = function DataBrowser_setCharacterTable() {
@@ -275,7 +286,8 @@ DataBrowser.prototype.setCharacterTable = function DataBrowser_setCharacterTable
     this.__table.setColumnSelector(document.getElementById('data-browser-column-selector'));
 }
 
-DataBrowser.prototype.setEquipTable = function DataBrowser_setEquipTable(level) {
+DataBrowser.prototype.makeEquipData = function DataBrowser_makeEquipData() {
+    const level = this.__level.value;
     const rows = [];
     const loader = this.__loader;
     this.__loader.forEachEquipBase(function(equipBase) {
@@ -300,7 +312,10 @@ DataBrowser.prototype.setEquipTable = function DataBrowser_setEquipTable(level) 
             equipBase.move,
         ])
     });
+    return rows;
+}
 
+DataBrowser.prototype.setEquipTable = function DataBrowser_setEquipTable(level) {
     this.__table.update([
             new Table.Column('ID', Table.columnType.NUM),
             new Table.Column('名前'),
@@ -319,9 +334,12 @@ DataBrowser.prototype.setEquipTable = function DataBrowser_setEquipTable(level) 
             new Table.Column('クリティカル', Table.columnType.NUM_FMT),
             new Table.Column('移動速度', Table.columnType.NUM),
         ],
-        rows);
-
+        this.makeEquipData());
     this.__table.setColumnSelector(document.getElementById('data-browser-column-selector'));
+}
+
+DataBrowser.prototype.updateEquipTable = function DataBrowser_setEquipTable() {
+    this.__table.setRows(this.makeEquipData());
 }
 
 DataBrowser.prototype.setItemTable = function DataBrowser_setItemTable() {
@@ -640,7 +658,49 @@ DataBrowser.prototype.setStageTable = function DataBrowser_setStageTable() {
         return '';
     };
 
+    /**
+     * format enemy units 
+     * @param {BgrXmlLoader} loader
+     * @param {{
+     *     id: number,
+     *     level: number,
+     *     time: number
+     * }[][]} unitLines
+     */
+    const formatArmy = function(loader, unitLines) {
+        const ret = [];
+        for (let units of unitLines) {
+            if (units) {
+                const line = [];
+                for (let unit of units) {
+                    const unitBase = loader.getUnitBase(unit.id);
+                    if (unitBase) {
+                        line.push(concat(unitBase.name, 'Lv', unit.level));
+                    }
+                }
+                ret.push(line.join('/'));
+            }
+        }
+        return ret.join('\n');
+    };
 
+    /**
+     * format enemy units 
+     * @param {BgrXmlLoader} loader
+     * @param {number[]} units
+     * @param {number} level stage level
+     */
+    const formatEnemy = function(loader, units, level) {
+        const ret = [];
+        for (let unitId of units) {
+            const unitBase = loader.getUnitBase(unitId);
+            if (unitBase) {
+                ret.push(concat(unitBase.name, 'Lv', level, '(', unitId, ')'));
+            }
+        }
+        return ret.join('\n');
+    };
+   
     const rows = [];
     this.__loader.forEachStage((stage) => rows.push([
         stage.id,
@@ -649,6 +709,7 @@ DataBrowser.prototype.setStageTable = function DataBrowser_setStageTable() {
         getProperty(this.__loader.getStageAreaByStageId(stage.id), 'name', ''),
         getProperty(this.__loader.getStageListByStageId(stage.id), 'name', ''),
         stage.name,
+        stage.level,
         stage.comment,
         stage.costAP,
         formatCostItem(this.__loader, stage),
@@ -657,6 +718,8 @@ DataBrowser.prototype.setStageTable = function DataBrowser_setStageTable() {
         formatItemRate(this.__loader, stage.item_rate.a),
         formatItemRate(this.__loader, stage.item_rate.b),
         formatItemRate(this.__loader, stage.item_rate.c),
+        formatArmy(this.__loader, stage.army),
+        formatEnemy(this.__loader, stage.enemy, stage.level),
         stage.durationTime,
     ]));
 
@@ -667,6 +730,7 @@ DataBrowser.prototype.setStageTable = function DataBrowser_setStageTable() {
             new Table.Column('エリア'),
             new Table.Column('リスト'),
             new Table.Column('名前'),
+            new Table.Column('レベル'),
             new Table.Column('説明'),
             new Table.Column('AP', Table.columnType.NUM),
             new Table.Column('消費アイテム'),
@@ -675,6 +739,8 @@ DataBrowser.prototype.setStageTable = function DataBrowser_setStageTable() {
             new Table.SystemColumn('ドロップ(A)'),
             new Table.SystemColumn('ドロップ(B)'),
             new Table.SystemColumn('ドロップ(C)'),
+            new Table.HiddenColumn('モンスター'),
+            new Table.HiddenColumn('隊長'),
             new Table.SystemColumn('ステージ時間'),
         ],
         rows);
