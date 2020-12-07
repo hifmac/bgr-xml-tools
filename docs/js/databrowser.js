@@ -5,7 +5,7 @@
  * @license MIT-License
  */
 
-import { BgrXmlCharacter, BgrXmlLoader, BgrXmlStage } from './bgr/bgr.xml.js'
+import { BgrXmlCharacter, BgrXmlCharacterEvent, BgrXmlLoader, BgrXmlStage } from './bgr/bgr.xml.js'
 import {
     concat,
     rankNumber2String,
@@ -129,12 +129,14 @@ DataBrowser.prototype.setUnitTable = function DataBrowser_setUnitTable(level) {
             new Table.SystemColumn('HP(成長)', Table.columnType.NUM),
             new Table.Column('攻撃力', Table.columnType.NUM),
             new Table.SystemColumn('攻撃力(成長)', Table.columnType.NUM),
+
             new Table.Column('攻撃速度', Table.columnType.NUM),
             new Table.SystemColumn('攻撃速度(成長)', Table.columnType.NUM),
             new Table.Column('防御力', Table.columnType.NUM),
             new Table.SystemColumn('防御力(成長)', Table.columnType.NUM),
             new Table.Column('クリティカル', Table.columnType.NUM_FMT),
             new Table.Column('移動速度', Table.columnType.NUM),
+
             new Table.SystemColumn('自殺時間', Table.columnType.NUM),
             new Table.SystemColumn('自殺HP', Table.columnType.NUM),
         ],
@@ -170,7 +172,7 @@ DataBrowser.prototype.setCharacterTable = function DataBrowser_setCharacterTable
         return ret.join('\n');
     };
 
-        /**
+    /**
      * format skill talk
      * @param {BgrXmlCharacter} character 
      */
@@ -187,14 +189,57 @@ DataBrowser.prototype.setCharacterTable = function DataBrowser_setCharacterTable
         return ret.join('\n');
     };
 
+    /**
+     * format event talk
+     * @param {BgrXmlCharacterEvent} event 
+     */
+    const formatEventTalk = function(event) {
+        if (event) {
+            const talks = [
+                [ '結婚', event.marryTalk ],
+                [ '新年', event.newYearTalk ],
+                [ 'バレンタイン', event.valentineTalk ],
+                [ 'ホワイトデー', event.whiteDayTalk ],
+                [ '春', event.springTalk ],
+                [ '子供の日', event.kodomoTalk ],
+                [ 'ウェディング', event.weddingTalk ],
+                [ '夏', event.summerTalk ],
+                [ '夏祭り', event.natumaturiTalk ],
+                [ '秋', event.fallTalk ],
+                [ 'ハロウィーン', event.hwTalk ],
+                [ '冬', event.winterTalk ],            
+                [ 'クリスマス', event.xmasTalk ],
+            ];
+
+            return Array.from(talks, (x) => concat(x[0], '：「', x[1], '」')).join('\n\n');
+        }
+
+        return '';
+    };
+
     const rows = [];
+    const loader = this.__loader;
     this.__loader.forEachCharacter(function(character) {
+        let name = character.name;
+        if (name === null || name.length === 0) {
+            const unit = loader.getUnitBaseByGroupID(character.id);
+            if (unit) {
+                name = unit.name;
+            }
+        }
+
+        let cv = character.cv;
+        if (cv === null || cv.length === 0) {
+            cv = name;
+        }
+
+        const event = loader.getCharacterEvent(character.id);
         rows.push([
             character.id,
             character.open,
             character.type,
-            character.name,
-            character.cv,
+            name,
+            cv,
             character.artist,
             character.skinOnly ? '〇' : '',
             character.comment,
@@ -202,6 +247,7 @@ DataBrowser.prototype.setCharacterTable = function DataBrowser_setCharacterTable
             formatSkillTalk(character),
             character.marryTalk,
             character.sportsTalk,
+            formatEventTalk(event),
             character.resource,
             character.bossBattleBonus,
         ]);
@@ -220,6 +266,7 @@ DataBrowser.prototype.setCharacterTable = function DataBrowser_setCharacterTable
             new Table.Column('スキルボイス'),
             new Table.Column('結婚'),
             new Table.Column('体育祭'),
+            new Table.Column('アイテム'),
             new Table.SystemColumn('リソース'),
             new Table.SystemColumn('ボスバトルボーナス'),
         ],

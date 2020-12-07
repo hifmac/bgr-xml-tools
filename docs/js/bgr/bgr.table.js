@@ -129,13 +129,28 @@ Table.Column = function TableColumn(title, type) {
 };
 
 /**
+ * @constructor table column
+ * @param {string} title column title string
+ * @param {string} [type] column data type
+ */
+Table.HiddenColumn = function TableHiddenColumn(title, type) {
+    this.title = title;
+    if (type) {
+        this.type = type;
+    }
+    this.visible = false;
+};
+
+/**
  * @constructor system column to be hidden
  * @param {string} title column title string
  * @param {string} type column data type
  */
 Table.SystemColumn = function TableSystemColumn(title, type) {
     this.title = title;
-    this.type = type;
+    if (type) {
+        this.type = type;
+    }
     this.visible = false;
     this.searchable = false;
 };

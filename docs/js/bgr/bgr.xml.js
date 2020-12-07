@@ -29,27 +29,32 @@ export function BgrXmlLoader(dynamic_import) {
  * @returns {Map<number, T>} mapped object
  */
 function BgrXmlLoader_mapElementsByTagName(doc, name, ctor) {
+    /*
+     * make tagName - attr key set for debug
+     */
+    if (!this.__keySet.has(name)) {
+        this.__keySet.set(name, new Set());
+    }
+    const keySet = this.__keySet.get(name);
+
     /** @type {Map<number, T>} */
     const map = new Map();
-
-    const elems = doc.getElementsByTagName(name);
-    for (let elem of elems) {
+    for (let elem of doc.getElementsByTagName(name)) {
         if (elem.hasAttribute('id')) {
             /*
              * collect tag name attributes
              */
             for (let attr of elem.getAttributeNames()) {
-                if (!this.__keySet.has(elem.tagName)) {
-                    this.__keySet.set(elem.tagName, new Set());
-                }
-        
-                this.__keySet.get(elem.tagName).add(attr);
+                keySet.add(attr);
             }
 
             /*
              * create and register object
              */
-            map.set(elem.getAttribute('id'), new ctor(elem));
+            const obj = new ctor(elem);
+            if (obj.id) {
+                map.set(obj.id, obj);
+            }
         }
     }
     return map;
@@ -80,6 +85,7 @@ BgrXmlLoader.prototype.loadXml = function BgrXmlLoader_loadXml(xml) {
         this.__stageAreaMap = this.mapElementsByTagName(bgrxml, 'stagearea', BgrXmlStageArea);
         this.__stageGroupMap = this.mapElementsByTagName(bgrxml, 'stage_group', BgrXmlStageGroup);
         this.__chapterGroupMap = this.mapElementsByTagName(bgrxml, 'chapter_group', BgrXmlChapterGroup);
+        this.__characterEventMap = this.mapElementsByTagName(bgrxml, 'heroevent', BgrXmlCharacterEvent);
 
         console.log(this.__keySet);
 
@@ -183,6 +189,10 @@ BgrXmlLoader.prototype.forEachItem = function BgrXmlLoader_forEachItem(f) {
     this.forEach(this.__itemMap, f);
 };
 
+BgrXmlLoader.prototype.getCharacterEvent = function BgrXmlLoader_getCharacterEvent(charid) {
+    return this.__characterEventMap.get(String(charid));
+};
+
 BgrXmlLoader.prototype.getUnitBase = function BgrXmlLoader_getUnitBase(unitId) {
     return this.__unitBaseMap.get(String(unitId));
 };
@@ -208,6 +218,16 @@ BgrXmlLoader.prototype.getUnitBaseBySkillID = function BgrXmlLoader_getUnitBase(
         }
     }
     return candidate;
+};
+
+BgrXmlLoader.prototype.getUnitBaseByGroupID = function BgrXmlLoader_getUnitBase(groupid) {
+    groupid = String(groupid);
+    for (let unit of this.__unitBaseMap.values()) {
+        if (unit.groupId == groupid) {
+            return unit;
+        }
+    }
+    return null;
 };
 
 BgrXmlLoader.prototype.getSkillBase = function BgrXmlLoader_getSkillBase(skillId) {
@@ -496,6 +516,83 @@ export function BgrXmlCharacter(node) {
     this.bossBattleBonus = node.getAttribute('boss_battle_bonus');
     this.marryTalk = node.getAttribute('marrytalk');
     this.pictureOnly = node.getAttribute('pic_only');    
+}
+
+/**
+ * @constructor BGR XML character
+ * @param {Element} node 
+ */
+export function BgrXmlCharacterEvent(node) {
+    if (!node.hasAttribute('marryPic1')) {
+        return ;
+    }
+
+    this.id = node.getAttribute('id');
+    this.marryPic1 = node.getAttribute('marryPic1');
+    this.marryPic2 = node.getAttribute('marryPic2');
+    this.marryFace1 = node.getAttribute('marryface1');
+    this.marryFace2 = node.getAttribute('marryface2');
+    this.marryTalk = node.getAttribute('marrytalk');
+
+    this.hwPhoto1 = node.getAttribute('hwphoto1');
+    this.hwPhoto2 = node.getAttribute('hwphoto2');
+    this.hwPhoto3 = node.getAttribute('hwphoto3');
+    this.hwTalk = node.getAttribute('hwtalk');
+
+    this.xmasPhoto1 = node.getAttribute('xmasphoto1');
+    this.xmasPhoto2 = node.getAttribute('xmasphoto2');
+    this.xmasPhoto3 = node.getAttribute('xmasphoto3');
+    this.xmasTalk = node.getAttribute('xmastalk');
+
+    this.newYearFace1 = node.getAttribute('newyearface1');
+    this.newYearFace2 = node.getAttribute('newyearface2');
+    this.newYearFace3 = node.getAttribute('newyearface3');
+    this.newYearTalk = node.getAttribute('newyeartalk');
+
+    this.valentineFace1 = node.getAttribute('valentineface1');
+    this.valentineFace2 = node.getAttribute('valentineface2');
+    this.valentineFace3 = node.getAttribute('valentineface3');
+    this.valentineTalk = node.getAttribute('valentinetalk');
+
+    this.whiteDayFace1 = node.getAttribute('whitedayface1');
+    this.whiteDayFace2 = node.getAttribute('whitedayface2');
+    this.whiteDayFace3 = node.getAttribute('whitedayface3');
+    this.whiteDayTalk = node.getAttribute('whitedaytalk');
+
+    this.springFace1 = node.getAttribute('springface1');
+    this.springFace2 = node.getAttribute('springface2');
+    this.springFace3 = node.getAttribute('springface3');
+    this.springTalk = node.getAttribute('springtalk');
+
+    this.kodomoFace1 = node.getAttribute('kodomoface1');
+    this.kodomoFace2 = node.getAttribute('kodomoface2');
+    this.kodomoFace3 = node.getAttribute('kodomoface3');
+    this.kodomoTalk = node.getAttribute('kodomotalk');
+
+    this.weddingFace1 = node.getAttribute('weddingface1');
+    this.weddingFace2 = node.getAttribute('weddingface2');
+    this.weddingFace3 = node.getAttribute('weddingface3');
+    this.weddingTalk = node.getAttribute('weddingtalk');
+
+    this.summerFace1 = node.getAttribute('summerface1');
+    this.summerFace2 = node.getAttribute('summerface2');
+    this.summerFace3 = node.getAttribute('summerface3');
+    this.summerTalk = node.getAttribute('summertalk');
+
+    this.natumaturiFace1 = node.getAttribute('natumaturiface1');
+    this.natumaturiFace2 = node.getAttribute('natumaturiface2');
+    this.natumaturiFace3 = node.getAttribute('natumaturiface3');
+    this.natumaturiTalk = node.getAttribute('natumaturitalk');
+
+    this.fallFace1 = node.getAttribute('fallface1');
+    this.fallFace2 = node.getAttribute('fallface2');
+    this.fallFace3 = node.getAttribute('fallface3');
+    this.fallTalk = node.getAttribute('falltalk');
+
+    this.winterFace1 = node.getAttribute('winterface1');
+    this.winterFace2 = node.getAttribute('winterface2');
+    this.winterFace3 = node.getAttribute('winterface3');
+    this.winterTalk = node.getAttribute('wintertalk');
 }
 
 /**
