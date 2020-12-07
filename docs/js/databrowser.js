@@ -398,6 +398,7 @@ DataBrowser.prototype.setQuestTable = function DataBrowser_setQuestTable() {
         quest.comment,
         quest.expeditionGroupId,
         quest.specialActId,
+        getProperty(this.__loader.getChapterGroup(quest.chapterGroupId), 'name', ''),
     ]));
 
     this.__table.update([
@@ -410,6 +411,7 @@ DataBrowser.prototype.setQuestTable = function DataBrowser_setQuestTable() {
             new Table.Column('開始時間', Table.columnType.DATE),
             new Table.Column('終了時間', Table.columnType.DATE),
             new Table.Column('曜日'),
+            new Table.Column('チャプターグループ'),
             new Table.Column('説明'),
             new Table.SystemColumn('大遠征グループID', Table.columnType.NUM),
             new Table.SystemColumn('specialActId', Table.columnType.NUM),

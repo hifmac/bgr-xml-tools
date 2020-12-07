@@ -86,6 +86,7 @@ Table.prototype.update = function Table_update(columns, rows) {
         lengthMenu,
         pageLength: rows.length < 3000 ? -1 : 1000,
         pagingType: 'full_numbers',
+        autoWidth: false,
     });
     this.__dataTable.rows.add(rows);
     this.__dataTable.draw();
