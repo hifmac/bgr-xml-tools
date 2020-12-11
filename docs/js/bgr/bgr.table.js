@@ -81,6 +81,7 @@ Table.prototype.update = function Table_update(columns, rows) {
 
     this.__dataTable = $(this.__element).DataTable({
         columns,
+        mark: true,
         order: [ [0, 'asc'] ],
         paging: true,
         lengthMenu,
@@ -169,7 +170,7 @@ Table.Column.prototype = Object.create(Table.ColumnBase.prototype);
  * @param {string} [type] column data type
  */
 Table.IgnoredColumn = function TableIgnoredColumn(title, type) {
-    Table.ColumnBase.call(this, { title, type, visible: false, searchable: true });
+    Table.ColumnBase.call(this, { title, type, visible: true, searchable: false });
 };
 
 Table.IgnoredColumn.prototype = Object.create(Table.ColumnBase.prototype);

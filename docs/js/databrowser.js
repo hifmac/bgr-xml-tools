@@ -11,7 +11,8 @@ import {
     rankNumber2String,
     getProperty,
     isTrue,
-    sortBy
+    sortBy,
+    calculateParameter
 } from './bgr/bgr.util.js'
 import { Table } from './bgr/bgr.table.js'
 
@@ -19,10 +20,6 @@ export function DataBrowser() {
     /** @type {HTMLSelectElement} */
     this.__dataBrowserType = document.getElementById('data-browser-type');
     this.__dataBrowserType.addEventListener('change', this.onDataTypeChanged.bind(this));
-
-    /** @type {HTMLInputElement} */
-    this.__level = document.getElementById('data-browser-level');
-    this.__level.addEventListener('change', this.onLevelChanged.bind(this));
 
     /** @type {(BgrXmlLoader | null)} */
     this.__loader = null;
@@ -37,6 +34,9 @@ DataBrowser.prototype.onDataTypeChanged = function DataBrowser_onDataTypeChanged
     }
 
     switch (this.__dataBrowserType.value) {
+    case 'ally-unit-full-data':
+        this.setAllyUnitFullDataTable();
+        break;
     case 'unit':
         this.setUnitTable();
         break;
@@ -47,8 +47,10 @@ DataBrowser.prototype.onDataTypeChanged = function DataBrowser_onDataTypeChanged
         this.setEquipTable();
         break;
     case 'skill':
+        this.setSkillTable();
         break;
     case 'buffer':
+        this.setBufferTable();
         break;
     case 'item':
         this.setItemTable();
@@ -68,36 +70,13 @@ DataBrowser.prototype.onDataTypeChanged = function DataBrowser_onDataTypeChanged
     }
 };
 
-DataBrowser.prototype.onLevelChanged = function DataBrowser_onLevelChanged() {
-    if (!this.__loader) {
-        alert('XMLがないのじゃ！');
-        return 
-    }
-
-    switch (this.__dataBrowserType.value) {
-    case 'unit':
-        this.updateUnitTable();
-        break;
-    case 'equip':
-        this.updateEquipTable();
-        break;
-    case 'skill':
-        break;
-    case 'buffer':
-        break;
-    }
-};
-
 /**
  * make unit table rows
  * @returns {(number | string)[][]} table rows
  */
-DataBrowser.prototype.makeUnitData = function DataBrowser_makeUnitData() {
-    const level = this.__level.value;
+DataBrowser.prototype.setAllyUnitFullDataTable = function DataBrowser_setAllyUnitFullDataTable() {
     const rows = [];
     this.__loader.forEachUnitBase(function(unitBase) {
-        const maxLevel = parseInt(getProperty(unitBase, 'maxLv', 0)) + 20;
-        const unitLevel = Math.max(1, level < 0 ? maxLevel : level) - 1;
         rows.push([
             unitBase.id,
             unitBase.groupId,
@@ -106,22 +85,64 @@ DataBrowser.prototype.makeUnitData = function DataBrowser_makeUnitData() {
             unitBase.maxLv,
             unitBase.attribute,
             unitBase.summonCooldown,
-            parseInt(unitBase.hp) + getProperty(unitBase, 'hpRate', 0) * unitLevel | 0,
+            unitBase.hp,
             unitBase.hpRate,
-            parseInt(unitBase.attack) + getProperty(unitBase, 'attackRate', 0) * unitLevel | 0,
+            unitBase.attack,
             unitBase.attackRate,
-            parseInt(unitBase.speed) + getProperty(unitBase, 'speedRate', 0) * unitLevel | 0,
+            unitBase.speed,
             unitBase.speedRate,
-            parseInt(unitBase.defense) + getProperty(unitBase, 'defenseRate', 0) * unitLevel | 0,
+            unitBase.defense,
             unitBase.defenseRate,
             concat(parseInt(unitBase.critical * 1000) / 10, '%'),
             unitBase.move,
             unitBase.suicideTime,
             unitBase.suicideHp,
+            unitBase.normalSkill,
+            unitBase.attackSkill,
+            unitBase.leaderSkill,
+            unitBase.monsterSkill,
+            unitBase.monsterAi,
         ]);
     });
     return rows;
-}
+};
+
+/**
+ * make unit table rows
+ * @returns {(number | string)[][]} table rows
+ */
+DataBrowser.prototype.makeUnitData = function DataBrowser_makeUnitData() {
+    const rows = [];
+    this.__loader.forEachUnitBase(function(unitBase) {
+        rows.push([
+            unitBase.id,
+            unitBase.groupId,
+            unitBase.name,
+            isTrue(unitBase.bgRank) ? 'BG' : rankNumber2String(parseInt(unitBase.rank)),
+            unitBase.maxLv,
+            unitBase.attribute,
+            unitBase.summonCooldown,
+            unitBase.hp,
+            unitBase.hpRate,
+            unitBase.attack,
+            unitBase.attackRate,
+            unitBase.speed,
+            unitBase.speedRate,
+            unitBase.defense,
+            unitBase.defenseRate,
+            concat(parseInt(unitBase.critical * 1000) / 10, '%'),
+            unitBase.move,
+            unitBase.suicideTime,
+            unitBase.suicideHp,
+            unitBase.normalSkill,
+            unitBase.attackSkill,
+            unitBase.leaderSkill,
+            unitBase.monsterSkill,
+            unitBase.monsterAi,
+        ]);
+    });
+    return rows;
+};
 
 DataBrowser.prototype.setUnitTable = function DataBrowser_setUnitTable(level) {
     this.__table.update([
@@ -136,25 +157,24 @@ DataBrowser.prototype.setUnitTable = function DataBrowser_setUnitTable(level) {
             new Table.SystemColumn('HP(成長)', Table.columnType.NUM),
             new Table.Column('攻撃力', Table.columnType.NUM),
             new Table.SystemColumn('攻撃力(成長)', Table.columnType.NUM),
-
             new Table.Column('攻撃速度', Table.columnType.NUM),
             new Table.SystemColumn('攻撃速度(成長)', Table.columnType.NUM),
             new Table.Column('防御力', Table.columnType.NUM),
             new Table.SystemColumn('防御力(成長)', Table.columnType.NUM),
             new Table.Column('クリティカル', Table.columnType.NUM_FMT),
             new Table.Column('移動速度', Table.columnType.NUM),
-
             new Table.SystemColumn('自殺時間', Table.columnType.NUM),
             new Table.SystemColumn('自殺HP', Table.columnType.NUM),
+            new Table.SystemColumn('通常攻撃', Table.columnType.NUM),
+            new Table.SystemColumn('スキル', Table.columnType.NUM),
+            new Table.SystemColumn('隊長スキル'),
+            new Table.SystemColumn('モンスタースキル'),
+            new Table.SystemColumn('モンスターAI'),
         ],
         this.makeUnitData());
 
     this.__table.setColumnSelector(document.getElementById('data-browser-column-selector'));
-}
-
-DataBrowser.prototype.updateUnitTable = function DataBrowser_updateUnitTable() {
-    this.__table.setRows(this.makeUnitData());
-}
+};
 
 DataBrowser.prototype.setCharacterTable = function DataBrowser_setCharacterTable() {
     /**
@@ -284,15 +304,12 @@ DataBrowser.prototype.setCharacterTable = function DataBrowser_setCharacterTable
         rows);
 
     this.__table.setColumnSelector(document.getElementById('data-browser-column-selector'));
-}
+};
 
 DataBrowser.prototype.makeEquipData = function DataBrowser_makeEquipData() {
-    const level = this.__level.value;
     const rows = [];
     const loader = this.__loader;
     this.__loader.forEachEquipBase(function(equipBase) {
-        const maxLevel = parseInt(getProperty(equipBase, 'baseLvMax', 0)) + parseInt(getProperty(equipBase, 'over', 0)) * 5;
-        const equipLevel = level < 0 ? maxLevel : level;
         rows.push([
             equipBase.id,
             loader.getItem(equipBase.id).name,
@@ -300,20 +317,21 @@ DataBrowser.prototype.makeEquipData = function DataBrowser_makeEquipData() {
             equipBase.over,
             equipBase.rank,
             equipBase.baseLvMax,
-            parseInt(equipBase.hp) + getProperty(equipBase, 'hpRate') * equipLevel | 0,
+            equipBase.hp,
             equipBase.hpRate,
-            parseInt(equipBase.attack) + getProperty(equipBase, 'attackRate') * equipLevel | 0,
+            equipBase.attack,
             equipBase.attackRate,
-            parseInt(equipBase.speed) + getProperty(equipBase, 'speedRate') * equipLevel | 0,
+            equipBase.speed,
             equipBase.speedRate,
-            parseInt(equipBase.defense) + getProperty(equipBase, 'defenseRate') * equipLevel | 0,
+            equipBase.defense,
             equipBase.defenseRate,
             concat(parseInt(equipBase.critical * 1000) / 10, '%'),
             equipBase.move,
+            equipBase.skill
         ])
     });
     return rows;
-}
+};
 
 DataBrowser.prototype.setEquipTable = function DataBrowser_setEquipTable(level) {
     this.__table.update([
@@ -333,14 +351,126 @@ DataBrowser.prototype.setEquipTable = function DataBrowser_setEquipTable(level) 
             new Table.SystemColumn('防御力(成長)', Table.columnType.NUM),
             new Table.Column('クリティカル', Table.columnType.NUM_FMT),
             new Table.Column('移動速度', Table.columnType.NUM),
+            new Table.SystemColumn('スキル'),
         ],
         this.makeEquipData());
     this.__table.setColumnSelector(document.getElementById('data-browser-column-selector'));
-}
+};
 
-DataBrowser.prototype.updateEquipTable = function DataBrowser_setEquipTable() {
-    this.__table.setRows(this.makeEquipData());
-}
+DataBrowser.prototype.makeSkillData = function DataBrowser_makeSkillData() {
+    const rows = [];
+    this.__loader.forEachSkillBase(function(skillBase) {
+        rows.push([
+            skillBase.id,
+            skillBase.name,
+            skillBase.attribute,
+            concat(skillBase.firstCooldown, '/', skillBase.cooldown),
+            skillBase.comment,
+            skillBase.sp,
+            skillBase.bp,
+            skillBase.bpRate,
+            skillBase.type,
+            skillBase.attackType,
+            skillBase.target,
+            skillBase.attackNumber,
+            skillBase.attackNumberType,
+            skillBase.attackArea,
+            skillBase.attackRange,
+            skillBase.attackStandardRange,
+            skillBase.sortestAttackRange,
+            skillBase.attackAdd,
+            skillBase.attackAddRate,
+            skillBase.attackScale,
+            skillBase.attackScaleRate,
+            skillBase.hp,
+            Array.from(skillBase.buffer, (x) => x.id).join('\n'),
+        ]);
+    });
+    return rows;
+};
+
+DataBrowser.prototype.setSkillTable = function DataBrowser_setSkillTable() {
+    this.__table.update([
+            new Table.Column('ID', Table.columnType.NUM),
+            new Table.Column('名前'),
+            new Table.Column('陣営'),
+            new Table.IgnoredColumn('CD(初/再)'),
+            new Table.Column('説明'),
+            new Table.IgnoredColumn('SP', Table.columnType.NUM),
+            new Table.IgnoredColumn('BP', Table.columnType.NUM),
+            new Table.SystemColumn('BP(成長)', Table.columnType.NUM),
+            new Table.Column('発動'),
+            new Table.Column('種類'),
+            new Table.Column('対象'),
+            new Table.IgnoredColumn('人数', Table.columnType.NUM),
+            new Table.HiddenColumn('選択種別'),
+            new Table.IgnoredColumn('範囲', Table.columnType.NUM),
+            new Table.IgnoredColumn('射程', Table.columnType.NUM),
+            new Table.SystemColumn('標準射程', Table.columnType.NUM),
+            new Table.SystemColumn('最小射程', Table.columnType.NUM),
+            new Table.IgnoredColumn('固定値', Table.columnType.NUM),
+            new Table.SystemColumn('固定値(成長)', Table.columnType.NUM),
+            new Table.IgnoredColumn('倍率', Table.columnType.NUM),
+            new Table.SystemColumn('倍率(成長)', Table.columnType.NUM),
+            new Table.SystemColumn('HP', Table.columnType.NUM),
+            new Table.SystemColumn('バフ'),
+        ],
+        this.makeSkillData());
+    this.__table.setColumnSelector(document.getElementById('data-browser-column-selector'));
+};
+
+DataBrowser.prototype.makeBufferData = function DataBrowser_makeBufferData() {
+    const rows = [];
+    this.__loader.forEachBufferBase(function(bufferBase) {
+        rows.push([
+            bufferBase.id,
+            bufferBase.group,
+            bufferBase.name,
+            bufferBase.attribute,
+            bufferBase.steal,
+            bufferBase.debuff,
+            bufferBase.battleType,
+            bufferBase.overlap,
+            bufferBase.clearBuffer,
+            bufferBase.clearDebuff,
+            bufferBase.bufferAdd,
+            bufferBase.bufferAddRate,
+            bufferBase.bufferDuration,
+            bufferBase.bufferDurationRate,
+            bufferBase.bufferScale,
+            bufferBase.bufferScaleRate,
+            bufferBase.bufferTimes,
+            bufferBase.bufferType,
+        ]);
+    });
+    return rows;
+};
+
+DataBrowser.prototype.setBufferTable = function DataBrowser_setBufferTable() {
+    this.__table.update([
+            new Table.Column('ID', Table.columnType.NUM),
+            new Table.Column('グループ'),
+            new Table.Column('名前'),
+            new Table.Column('陣営'),
+            new Table.Column('種類'),
+            new Table.Column('戦闘種別'),
+            new Table.Column('転移'),
+            new Table.IgnoredColumn('デバフ'),
+            new Table.IgnoredColumn('重複'),
+            new Table.IgnoredColumn('バフ解除'),
+            new Table.IgnoredColumn('デバフ解除'),
+            new Table.IgnoredColumn('固定値', Table.columnType.NUM),
+            new Table.SystemColumn('固定値(成長)', Table.columnType.NUM),
+            new Table.IgnoredColumn('時間', Table.columnType.NUM),
+            new Table.SystemColumn('時間(成長)', Table.columnType.NUM),
+            new Table.IgnoredColumn('倍率', Table.columnType.NUM),
+            new Table.SystemColumn('倍率(成長)', Table.columnType.NUM),
+            new Table.IgnoredColumn('回数', Table.columnType.NUM),
+        ],
+        this.makeBufferData());
+    this.__table.setColumnSelector(document.getElementById('data-browser-column-selector'));
+};
+
 
 DataBrowser.prototype.setItemTable = function DataBrowser_setItemTable() {
     /**

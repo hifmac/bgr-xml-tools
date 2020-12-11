@@ -9,12 +9,10 @@ import { BgrXmlLoader } from './bgr/bgr.xml.js'
 import { readFile } from './bgr/bgr.util.js'
 import { DamageLog } from './dmglog.js'
 import { DataBrowser } from './databrowser.js'
-//import { StageBrowser } from './stagebrowser.js'
 
 onload = function() {
     const dmglog = new DamageLog();
     const dataBrowser = new DataBrowser();
-    //const stageBrowser = new StageBrowser();
 
     /** @type {HTMLInputElement} */
     const xmlFile = document.getElementById('xml-file');
@@ -30,7 +28,6 @@ onload = function() {
                     xmlFileLabel.textContent = file.name + ' [OK]';
                     dmglog.setLoader(loader);
                     dataBrowser.setLoader(loader);
-                    //stageBrowser.setLoader(loader);
                 }
                 else {
                     xmlFileLabel.textContent = 'ファイルが間違っているか壊れています';

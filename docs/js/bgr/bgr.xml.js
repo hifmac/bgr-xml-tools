@@ -5,7 +5,7 @@
  * @license MIT-License
  */
 
- import { translate } from './bgr.util.js'
+ import { translate, calculateParameter } from './bgr.util.js'
 
 /**
  * @constructor BGR xml loader
@@ -201,19 +201,23 @@ BgrXmlLoader.prototype.getEquipBase = function BgrXmlLoader_getEquipBase(equipId
     return this.__equipBaseMap.get(String(equipId));
 };
 
+BgrXmlLoader.prototype.getEquipBaseBySkillID = function BgrXmlLoader_getEquipBase(skillId) {
+    for (let equipBase of this.__equipBaseMap.values()) {
+        if (equipBase.skill == skillId) {
+            return equipBase;
+        }
+    }
+    return null;
+};
+
 BgrXmlLoader.prototype.getUnitBaseBySkillID = function BgrXmlLoader_getUnitBase(skillId) {
     skillId = String(skillId);
     let candidate = null
     for (let unit of this.__unitBaseMap.values()) {
         if (unit.normalSkill == skillId || unit.attackSkill == skillId || (unit.monsterSkill && unit.monsterSkill.indexOf(skillId) != -1)) {
-            if (candidate) {
-                if (unit.rank == '5' && unit.name.indexOf('+') != -1) {
-                    candidate = unit;
-                    break;
-                }
-            }
-            else {
-                candidate = unit;
+            candidate = unit;
+            if (candidate.rank == '5' && candidate.name.indexOf('+') != -1) {
+                break;
             }
         }
     }
@@ -350,6 +354,10 @@ export function BgrXmlEquipBase(node) {
     this.skill = node.getAttribute('skill');
 }
 
+BgrXmlEquipBase.prototype.getMaxLevel = function BgrXmlEquipBase_getMaxLevel() {
+    return calculateParameter(this.baseLvMax, this.over, 5);
+};
+
 /**
  * @constructor BGR skill base
  * @param {Element} node 
@@ -357,7 +365,7 @@ export function BgrXmlEquipBase(node) {
 export function BgrXmlSkillBase(node) {
     this.id = node.getAttribute('id');
     this.name = node.getAttribute('name');
-    this.attribute = node.getAttribute('attr');
+    this.attribute = translate(node.getAttribute('attr'));
 
     this.hp = node.getAttribute('hp');
     this.sp = node.getAttribute('sp');
@@ -366,15 +374,15 @@ export function BgrXmlSkillBase(node) {
     this.firstCooldown = node.getAttribute('first_cd');
     this.cooldown = node.getAttribute('cd');
 
-    this.target = node.getAttribute('target');
-    this.type = node.getAttribute('type');
+    this.target = translate(node.getAttribute('target'));
+    this.type = translate(node.getAttribute('type'));
 
     this.attackAdd = node.getAttribute('atkadd');
     this.attackAddRate = node.getAttribute('atkadd_rate');
     this.attackScale = node.getAttribute('atkscale');
     this.attackScaleRate = node.getAttribute('atkscale_rate');
 
-    this.attackType = node.getAttribute('atktype');
+    this.attackType = translate(node.getAttribute('atktype'));
     this.attackArea = node.getAttribute('atkarea');
     this.attackNumberType = node.getAttribute('atknum_type');
     this.attackNumber = node.getAttribute('atknumber');
@@ -385,22 +393,22 @@ export function BgrXmlSkillBase(node) {
 
     this.buffer = [
         {
+            id: node.getAttribute('buff1'),
             probability: node.getAttribute('bprob1'),
-            effect: node.getAttribute('buff1'),
             self: node.getAttribute('buff_self1'),
             area: node.getAttribute('buff_area1'),
             areaDuration: node.getAttribute('buff_area_dur1'),
         },
         {
+            id: node.getAttribute('buff2'),
             probability: node.getAttribute('bprob2'),
-            effect: node.getAttribute('buff2'),
             self: node.getAttribute('buff_self2'),
             area: null,
             aeraDuration: null,
         }
     ];
 
-    this.comment = node.getAttribute('comment');
+    this.comment = translate(node.getAttribute('comment'));
 }
 
 /**
@@ -409,15 +417,15 @@ export function BgrXmlSkillBase(node) {
  */
 export function BgrXmlBufferBase(node) {
     this.id = node.getAttribute('id');
-    this.name = node.getAttribute('name');
+    this.name = translate(node.getAttribute('name'));
     this.attribute = node.getAttribute('attr');
     this.battleType = node.getAttribute('battletype');
 
-    this.bufferType = node.getAttribute('bufftype');
-    this.clearBuffer = node.getAttribute('clear_buff');
-    this.clearDebuff = node.getAttribute('clear_debuff');
+    this.bufferType = translate(node.getAttribute('bufftype'));
+    this.clearBuffer = translate(node.getAttribute('clear_buff'));
+    this.clearDebuff = translate(node.getAttribute('clear_debuff'));
     this.debuff = node.getAttribute('debuff');
-    this.steal = node.getAttribute('steal');
+    this.steal = translate(node.getAttribute('steal'));
 
     this.bufferTimes = node.getAttribute('buff_times');
     this.bufferAdd = node.getAttribute('buffadd');

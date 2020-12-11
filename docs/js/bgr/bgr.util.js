@@ -109,18 +109,62 @@ export const translate = (function() {
         '消耗': '消耗品',
         '角色': 'キャラ',
         '對話角色': 'シナリオキャラ',
+        '普攻': '通常攻撃',
+        '傷害': 'ダメージ',
+        '敵方單體': '敵：単体',
+        '敵方全體': '敵：全体',
+        '敵方直線範圍': '敵：ライン前方',
+        '敵方該路': '味方：ライン上',
+        '敵方圓形範圍': '敵：円形',
+        '敵方地圖砲': '敵：砲撃',
+        '我方全體': '味方：全体',
+        '我方單體': '味方：単体',
+        '我方圓形範圍': '味方：円形',
+        '我方直線範圍': '味方：ライン前方',
+        '我方該路': '味方：ライン上',
+        '主動': '手動',
+        '無陣營': '無陣営',
+        '招換': '召喚',
+        '防禦力上升': '防御力上昇',
+        '由遠到近': '遠くから近く',
+        '蓄氣': 'チャージ',
+        '變身': '変身',
+        '不可以': '不可能',
+        '可以': '可能',
+        '防禦加成': '防御UP', 
+        '擊退抗性': '撃退抵抗', 
+        '暈眩抗性': '眩暈抵抗', 
+        '沉默抗性': '封印抵抗', 
+        '生命上限加成': 'HP上限UP',
+        '速度加成': '攻撃速度UP', 
+        '暴擊加成': 'クリティカルUP',
+        '負面狀態消除': 'デバフ状態解除',
+        '攻擊吸收': '攻撃吸収',
+        '移動加成': '移動力UP',
     };
+    const MAX_WORD_LENGTH = Object.keys(WORDS).reduce((accum , value) => Math.max(accum, value.length), 0);
 
     const FRAGMENTS = [
         [ '集換證書', '交換チケット' ],
+        [ '防禦力上升', '防御力上昇' ],
+        [ '防御力提升', '防御力上昇' ],
+        [ '玩家技能', 'プレイヤースキル' ],
+        [ '活動競擊作戰', 'イベント競撃作戦' ],
+        [ '競擊作戰', '競撃作戦' ],
+        [ '傷害提升', 'ダメージUP' ],
+        [ '英雄SP消耗減少', 'ユニットSP消費低減'],
+        [ '(全體)', '(全体)' ],
+        [ '(單體)', '(単体)' ],
     ];
 
     return function (str) {
-        if (str in WORDS) {
-            return WORDS[str];
-        }
-        
         if (str) {
+            if (str.length <= MAX_WORD_LENGTH) {
+                if (str in WORDS) {
+                    return WORDS[str];
+                }
+            }
+        
             for (let fragment of FRAGMENTS) {
                 str = str.replace(fragment[0], fragment[1]);
             }
@@ -279,6 +323,16 @@ export function isTrue(value) {
         return value === '是';
     }
     return value;
+}
+
+/**
+ * 
+ * @param {(string | number)} parameter 
+ * @param {(string | number)} rate 
+ * @param {number} level 
+ */
+export function calculateParameter(parameter, rate, level) {
+    return parseFloat(parameter || 0) + parseFloat(rate || 0) * level;
 }
 
 /**

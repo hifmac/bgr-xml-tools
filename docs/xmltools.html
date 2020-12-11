@@ -10,9 +10,8 @@
         <!-- DataTables CSS -->
         <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.22/css/jquery.dataTables.css">    
 
-        <!-- Bootstrap treeview CSS
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-treeview@1.2.0/src/css/bootstrap-treeview.css" integrity="sha256-QsqWy4qg++WE4aOGfR94xKzQy0hWvW9XhrT0z/HYJjA=" crossorigin="anonymous">
-         -->
+        <!-- DataTables mark plugin CSS -->
+        <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/datatables.mark.js/2.0.0/datatables.mark.min.css">    
 
         <!-- BGR module and CSS -->
         <link rel="stylesheet" href="css/xmltools.css">
@@ -81,6 +80,7 @@
                             <label for="data-browser-type">種類：</label>
                             <select class="form-control mr-2" id="data-browser-type">
                                 <option value="none">--</option>
+                                <option value="ally-unit-full-data">味方ユニット(フル)</option>
                                 <option value="unit">ユニット</option>
                                 <option value="character">キャラクター</option>
                                 <option value="equip">装備</option>
@@ -92,8 +92,9 @@
                                 <option value="quest">クエスト</option>
                                 <option value="achievement">称号</option>
                             </select>
-                            <label for="data-browser-level">レベル：</label>
-                            <input class="form-control" type="number" id="data-browser-level" value="-1"></input>
+                        </div>
+
+                        <div class="form-group form-inline" id='data-browser-column-filter'>
                         </div>
 
                         <div class="form-group form-inline" id='data-browser-column-selector'>
@@ -133,8 +134,8 @@
         <!-- DataTable as jQuery plugin -->
         <script src="https://cdn.datatables.net/1.10.22/js/jquery.dataTables.js" type="text/javascript" charset="utf8" ></script>
 
-        <!-- Bootstrap treeview plugin
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap-treeview@1.2.0/src/js/bootstrap-treeview.js" integrity="sha256-izpq/OwDAp6tvbCXNMsAf2SSgYIa00N0iECiKNDMPmI=" crossorigin="anonymous"></script>        
-         -->
+        <!-- DataTable mark plugin -->
+        <script src="https://cdn.jsdelivr.net/g/mark.js(jquery.mark.min.js),datatables.mark.js"></script>
+
     </body>
 </html>
