@@ -5,266 +5,344 @@
  * @license MIT-License
  */
 
- import { translate, calculateParameter } from './bgr.util.js'
+import { translate, calculateParameter } from './bgr.util.js'
+
+export class XmlMapper {
+    constructor() {
+        /** @type {Map<string, Set<string>>} */
+        this.#keySet = new Map();
+    }
+
+    /**
+     * @template T type to be created by constructor
+     * @param {Document} doc xml document
+     * @param {string} name tag name to find element in the document
+     * @param {new(elem: Element) => T} ctor object constructor
+     * @returns {Map<number, T>} mapped object
+     */
+    mapElementsByTagName(doc, name, ctor) {
+        /*
+        * make tagName - attr key set for debug
+        */
+        if (!this.#keySet.has(name)) {
+            this.#keySet.set(name, new Set());
+        }
+        const keySet = this.#keySet.get(name);
+
+        /** @type {Map<number, T>} */
+        const map = new Map();
+        for (const elem of doc.getElementsByTagName(name)) {
+            if (elem.hasAttribute('id')) {
+                /*
+                * collect tag name attributes
+                */
+                for (const attr of elem.getAttributeNames()) {
+                    keySet.add(attr);
+                }
+
+                /*
+                * create and register object
+                */
+                const obj = new ctor(elem);
+                if (obj.id) {
+                    map.set(obj.id, obj);
+                }
+            }
+        }
+        return map;
+    }
+
+    get keySet() {
+        return this.#keySet;
+    }
+
+    #keySet;
+ }
 
 /**
  * @constructor BGR xml loader
- * @param {boolean} dynamic_import 
  */
-export function BgrXmlLoader(dynamic_import) {
-    this.__is_dynamic_import_enabled = dynamic_import;
+export class BgrXmlLoader {
+    constructor() {
+    }
 
-    /** @type {Array<function(BgrXmlLoader): void>} */
-    this.__listeners = [];
-
-    /** @type {Map<string, Set<string>>} */
-    this.__keySet = new Map();
-}
-
-/**
- * @template T type to be created by constructor
- * @param {Document} doc xml document
- * @param {string} name tag name to find element in the document
- * @param {new() => T} ctor object constructor
- * @returns {Map<number, T>} mapped object
- */
-function BgrXmlLoader_mapElementsByTagName(doc, name, ctor) {
-    /*
-     * make tagName - attr key set for debug
+    /**
+     * @template T type to be created by constructor
+     * @param {Document} doc xml document
+     * @param {string} name tag name to find element in the document
+     * @param {new() => T} ctor object constructor
+     * @returns {Map<number, T>} mapped object
      */
-    if (!this.__keySet.has(name)) {
-        this.__keySet.set(name, new Set());
-    }
-    const keySet = this.__keySet.get(name);
-
-    /** @type {Map<number, T>} */
-    const map = new Map();
-    for (let elem of doc.getElementsByTagName(name)) {
-        if (elem.hasAttribute('id')) {
-            /*
-             * collect tag name attributes
-             */
-            for (let attr of elem.getAttributeNames()) {
-                keySet.add(attr);
-            }
-
-            /*
-             * create and register object
-             */
-            const obj = new ctor(elem);
-            if (obj.id) {
-                map.set(obj.id, obj);
-            }
+    mapElementsByTagName(doc, name, ctor) {
+        /*
+        * make tagName - attr key set for debug
+        */
+        if (!this.__keySet.has(name)) {
+            this.__keySet.set(name, new Set());
         }
-    }
-    return map;
-}
-BgrXmlLoader.prototype.mapElementsByTagName = BgrXmlLoader_mapElementsByTagName;
+        const keySet = this.__keySet.get(name);
 
-/**
- * load BGR XML
- * @param {string} xml bgr xml
- */
-BgrXmlLoader.prototype.loadXml = function BgrXmlLoader_loadXml(xml) {
-    const parser = new DOMParser();
-    const bgrxml = parser.parseFromString(xml, "text/xml");
+        /** @type {Map<number, T>} */
+        const map = new Map();
+        for (let elem of doc.getElementsByTagName(name)) {
+            if (elem.hasAttribute('id')) {
+                /*
+                * collect tag name attributes
+                */
+                for (let attr of elem.getAttributeNames()) {
+                    keySet.add(attr);
+                }
 
-    if (bgrxml.firstChild.nodeName == 'BGR') {
-        this.__unitBaseMap = this.mapElementsByTagName(bgrxml, 'hero', BgrXmlUnitBase);
-        this.__characterMap = this.mapElementsByTagName(bgrxml, 'herogroup', BgrXmlCharacter);
-        this.__skillBaseMap = this.mapElementsByTagName(bgrxml, 'skill', BgrXmlSkillBase);
-        this.__equipBaseMap = this.mapElementsByTagName(bgrxml, 'equip', BgrXmlEquipBase);
-        this.__bufferBaseMap = this.mapElementsByTagName(bgrxml, 'buff', BgrXmlBufferBase);
-        this.__itemMap = this.mapElementsByTagName(bgrxml, 'item', BgrXmlItem);
-        this.__specialItemMap = this.mapElementsByTagName(bgrxml, 'specialitem', BgrXmlSpecialItem);
-        this.__achievementMap = this.mapElementsByTagName(bgrxml, 'achievement', BgrXmlAchievement);
-        this.__questMap = this.mapElementsByTagName(bgrxml, 'quest', BgrXmlQuest);
-
-        this.__stageMap = this.mapElementsByTagName(bgrxml, 'stage', BgrXmlStage);
-        this.__stageListMap = this.mapElementsByTagName(bgrxml, 'stagelist', BgrXmlStageList);
-        this.__stageAreaMap = this.mapElementsByTagName(bgrxml, 'stagearea', BgrXmlStageArea);
-        this.__stageGroupMap = this.mapElementsByTagName(bgrxml, 'stage_group', BgrXmlStageGroup);
-        this.__chapterGroupMap = this.mapElementsByTagName(bgrxml, 'chapter_group', BgrXmlChapterGroup);
-        this.__characterEventMap = this.mapElementsByTagName(bgrxml, 'heroevent', BgrXmlCharacterEvent);
-
-        console.log(this.__keySet);
-
-        return true;
-    }
-
-    return false;
-}
-
-/**
- * call functor for each unit
- * @template T
- * @param {Map<string, T>} map
- * @param {function(T): void} f functor
- */
-function BgrXmlLoader_forEach(map, f) {
-    for (let key of map.keys()) {
-        f(map.get(key));
-    }
-}
-BgrXmlLoader.prototype.forEach = BgrXmlLoader_forEach;
-
-/**
- * call functor for each unit
- * @param {function(BgrXmlUnitBase): void} f functor
- */
-BgrXmlLoader.prototype.forEachUnitBase = function BgrXmlLoader_forEachUnitBase(f) {
-    this.forEach(this.__unitBaseMap, f);
-};
-
-/**
- * call functor for each character
- * @param {function(BgrXmlCharacter): void} f functor
- */
-BgrXmlLoader.prototype.forEachCharacter = function BgrXmlLoader_forEachCharacter(f) {
-    this.forEach(this.__characterMap, f);
-};
-
-
-/**
- * call functor for each equip
- * @param {function(BgrXmlEquipBase): void} f functor
- */
-BgrXmlLoader.prototype.forEachEquipBase = function BgrXmlLoader_forEachEquipBase(f) {
-    this.forEach(this.__equipBaseMap, f);
-};
-
-/**
- * call functor for each skill
- * @param {function(BgrXmlSkillBase): void} f functor
- */
-BgrXmlLoader.prototype.forEachSkillBase = function BgrXmlLoader_forEachSkillBase(f) {
-    this.forEach(this.__skillBaseMap, f);
-};
-
-/**
- * call functor for each buffer
- * @param {function(BgrXmlBufferBase): void} f functor
- */
-BgrXmlLoader.prototype.forEachBufferBase = function BgrXmlLoader_forEachBufferBase(f) {
-    this.forEach(this.__bufferBaseMap, f);
-};
-
-/**
- * call functor for each achievement
- * @param {function(BgrXmlAchievement): void} f functor
- */
-BgrXmlLoader.prototype.forEachAchievement = function BgrXmlLoader_forEachAchievement(f) {
-    this.forEach(this.__achievementMap, f);
-};
-
-/**
- * call functor for each quest
- * @param {function(BgrXmlQuest): void} f functor
- */
-BgrXmlLoader.prototype.forEachQuest = function BgrXmlLoader_forEachQuest(f) {
-    this.forEach(this.__questMap, f);
-};
-
-/**
- * call functor for each special item
- * @param {function(BgrXmlSpecialItem): void} f functor
- */
-BgrXmlLoader.prototype.forEachSpecialItem = function BgrXmlLoader_forEachSpecialItem(f) {
-    this.forEach(this.__specialItemMap, f);
-};
-
-/**
- * call functor for each stage
- * @param {function(BgrXmlStage): void} f functor
- */
-BgrXmlLoader.prototype.forEachStage = function BgrXmlLoader_forEachStage(f) {
-    this.forEach(this.__stageMap, f);
-};
-
-/**
- * call functor for each item
- * @param {function(BgrXmlItem): void} f functor
- */
-BgrXmlLoader.prototype.forEachItem = function BgrXmlLoader_forEachItem(f) {
-    this.forEach(this.__itemMap, f);
-};
-
-BgrXmlLoader.prototype.getCharacterEvent = function BgrXmlLoader_getCharacterEvent(charid) {
-    return this.__characterEventMap.get(String(charid));
-};
-
-BgrXmlLoader.prototype.getUnitBase = function BgrXmlLoader_getUnitBase(unitId) {
-    return this.__unitBaseMap.get(String(unitId));
-};
-
-BgrXmlLoader.prototype.getEquipBase = function BgrXmlLoader_getEquipBase(equipId) {
-    return this.__equipBaseMap.get(String(equipId));
-};
-
-BgrXmlLoader.prototype.getEquipBaseBySkillID = function BgrXmlLoader_getEquipBase(skillId) {
-    for (let equipBase of this.__equipBaseMap.values()) {
-        if (equipBase.skill == skillId) {
-            return equipBase;
-        }
-    }
-    return null;
-};
-
-BgrXmlLoader.prototype.getUnitBaseBySkillID = function BgrXmlLoader_getUnitBase(skillId) {
-    skillId = String(skillId);
-    let candidate = null
-    for (let unit of this.__unitBaseMap.values()) {
-        if (unit.normalSkill == skillId || unit.attackSkill == skillId || (unit.monsterSkill && unit.monsterSkill.indexOf(skillId) != -1)) {
-            candidate = unit;
-            if (candidate.rank == '5' && candidate.name.indexOf('+') != -1) {
-                break;
+                /*
+                * create and register object
+                */
+                const obj = new ctor(elem);
+                if (obj.id) {
+                    map.set(obj.id, obj);
+                }
             }
         }
+        return map;
     }
-    return candidate;
-};
 
-BgrXmlLoader.prototype.getUnitBaseByGroupID = function BgrXmlLoader_getUnitBase(groupid) {
-    groupid = String(groupid);
-    for (let unit of this.__unitBaseMap.values()) {
-        if (unit.groupId == groupid) {
-            return unit;
+    /**
+     * load BGR XML
+     * @param {string} xml bgr xml
+     */
+    loadXml(xml) {
+        const parser = new DOMParser();
+        const bgrxml = parser.parseFromString(xml, "text/xml");
+
+        if (bgrxml.firstChild.nodeName == 'BGR') {
+            this.#unitBaseMap = this.#mapper.mapElementsByTagName(bgrxml, 'hero', BgrXmlUnitBase);
+            this.#characterMap = this.#mapper.mapElementsByTagName(bgrxml, 'herogroup', BgrXmlCharacter);
+            this.#skillBaseMap = this.#mapper.mapElementsByTagName(bgrxml, 'skill', BgrXmlSkillBase);
+            this.#equipBaseMap = this.#mapper.mapElementsByTagName(bgrxml, 'equip', BgrXmlEquipBase);
+            this.#bufferBaseMap = this.#mapper.mapElementsByTagName(bgrxml, 'buff', BgrXmlBufferBase);
+            this.#itemMap = this.#mapper.mapElementsByTagName(bgrxml, 'item', BgrXmlItem);
+            this.#specialItemMap = this.#mapper.mapElementsByTagName(bgrxml, 'specialitem', BgrXmlSpecialItem);
+            this.#achievementMap = this.#mapper.mapElementsByTagName(bgrxml, 'achievement', BgrXmlAchievement);
+            this.#questMap = this.#mapper.mapElementsByTagName(bgrxml, 'quest', BgrXmlQuest);
+
+            this.#stageMap = this.#mapper.mapElementsByTagName(bgrxml, 'stage', BgrXmlStage);
+            this.#stageListMap = this.#mapper.mapElementsByTagName(bgrxml, 'stagelist', BgrXmlStageList);
+            this.#stageAreaMap = this.#mapper.mapElementsByTagName(bgrxml, 'stagearea', BgrXmlStageArea);
+            this.#stageGroupMap = this.#mapper.mapElementsByTagName(bgrxml, 'stage_group', BgrXmlStageGroup);
+            this.#chapterGroupMap = this.#mapper.mapElementsByTagName(bgrxml, 'chapter_group', BgrXmlChapterGroup);
+            this.#characterEventMap = this.#mapper.mapElementsByTagName(bgrxml, 'heroevent', BgrXmlCharacterEvent);
+
+            console.log(this.__keySet);
+
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * call functor for each unit
+     * @template T
+     * @param {Map<string, T>} map
+     * @param {function(T): void} f functor
+     */
+    forEach(map, f) {
+        for (let key of map.keys()) {
+            f(map.get(key));
         }
     }
-    return null;
-};
 
-BgrXmlLoader.prototype.getSkillBase = function BgrXmlLoader_getSkillBase(skillId) {
-    return this.__skillBaseMap.get(String(skillId));
-};
+    /**
+     * call functor for each unit
+     * @param {function(BgrXmlUnitBase): void} f functor
+     */
+    forEachUnitBase(f) {
+        this.forEach(this.#unitBaseMap, f);
+    };
 
-BgrXmlLoader.prototype.getBufferBase = function BgrXmlLoader_getBufferBase(bufferId) {
-    return this.__bufferBaseMap.get(String(bufferId));
-};
+    /**
+     * call functor for each character
+     * @param {function(BgrXmlCharacter): void} f functor
+     */
+    forEachCharacter(f) {
+        this.forEach(this.#characterMap, f);
+    };
 
-BgrXmlLoader.prototype.getItem = function BgrXmlLoader_getItem(itemid) {
-    return this.__itemMap.get(String(itemid));
-};
 
-BgrXmlLoader.prototype.getStage = function BgrXmlLoader_getStage(stageid) {
-    return this.__stageMap.get(String(stageid));
-};
+    /**
+     * call functor for each equip
+     * @param {function(BgrXmlEquipBase): void} f functor
+     */
+    forEachEquipBase(f) {
+        this.forEach(this.#equipBaseMap, f);
+    };
 
-BgrXmlLoader.prototype.getStageListByStageId = function BgrXmlLoader_getStageList(stageid) {
-    return this.__stageListMap.get(String(stageid / 100 | 0));
-};
+    /**
+     * call functor for each skill
+     * @param {function(BgrXmlSkillBase): void} f functor
+     */
+    forEachSkillBase(f) {
+        this.forEach(this.#skillBaseMap, f);
+    };
 
-BgrXmlLoader.prototype.getStageAreaByStageId = function BgrXmlLoader_getStageArea(stageid) {
-    return this.__stageAreaMap.get(String(stageid / 10000 | 0));
-};
+    /**
+     * call functor for each buffer
+     * @param {function(BgrXmlBufferBase): void} f functor
+     */
+    forEachBufferBase(f) {
+        this.forEach(this.#bufferBaseMap, f);
+    };
 
-BgrXmlLoader.prototype.getStageGroup = function BgrXmlLoader_getStageGroup(stagegroupid) {
-    return this.__stageGroupMap.get(String(stagegroupid));
-};
+    /**
+     * call functor for each achievement
+     * @param {function(BgrXmlAchievement): void} f functor
+     */
+    forEachAchievement(f) {
+        this.forEach(this.#achievementMap, f);
+    };
 
-BgrXmlLoader.prototype.getChapterGroup = function BgrXmlLoader_getChapterGroup(chaptergroupid) {
-    return this.__chapterGroupMap.get(String(chaptergroupid));
-};
+    /**
+     * call functor for each quest
+     * @param {function(BgrXmlQuest): void} f functor
+     */
+    forEachQuest(f) {
+        this.forEach(this.#questMap, f);
+    };
+
+    /**
+     * call functor for each special item
+     * @param {function(BgrXmlSpecialItem): void} f functor
+     */
+    forEachSpecialItem(f) {
+        this.forEach(this.#specialItemMap, f);
+    };
+
+    /**
+     * call functor for each stage
+     * @param {function(BgrXmlStage): void} f functor
+     */
+    forEachStage(f) {
+        this.forEach(this.#stageMap, f);
+    };
+
+    /**
+     * call functor for each item
+     * @param {function(BgrXmlItem): void} f functor
+     */
+    forEachItem(f) {
+        this.forEach(this.#itemMap, f);
+    };
+
+    getCharacterEvent(charid) {
+        return this.#characterEventMap.get(String(charid));
+    };
+
+    getUnitBase(unitId) {
+        return this.#unitBaseMap.get(String(unitId));
+    };
+
+    getEquipBase(equipId) {
+        return this.#equipBaseMap.get(String(equipId));
+    };
+
+    getEquipBase(skillId) {
+        for (let equipBase of this.#equipBaseMap.values()) {
+            if (equipBase.skill == skillId) {
+                return equipBase;
+            }
+        }
+        return null;
+    };
+
+    getUnitBase(skillId) {
+        skillId = String(skillId);
+        let candidate = null
+        for (let unit of this.#unitBaseMap.values()) {
+            if (unit.normalSkill == skillId || unit.attackSkill == skillId || (unit.monsterSkill && unit.monsterSkill.indexOf(skillId) != -1)) {
+                candidate = unit;
+                if (candidate.rank == '5' && candidate.name.indexOf('+') != -1) {
+                    break;
+                }
+            }
+        }
+        return candidate;
+    };
+
+    getUnitBase(groupid) {
+        groupid = String(groupid);
+        for (let unit of this.#unitBaseMap.values()) {
+            if (unit.groupId == groupid) {
+                return unit;
+            }
+        }
+        return null;
+    };
+
+    getSkillBase(skillId) {
+        return this.#skillBaseMap.get(String(skillId));
+    };
+
+    getBufferBase(bufferId) {
+        return this.#bufferBaseMap.get(String(bufferId));
+    };
+
+    getItem(itemid) {
+        return this.#itemMap.get(String(itemid));
+    };
+
+    getStage(stageid) {
+        return this.#stageMap.get(String(stageid));
+    };
+
+    getStageList(stageid) {
+        return this.#stageListMap.get(String(stageid / 100 | 0));
+    };
+
+    getStageArea(stageid) {
+        return this.#stageAreaMap.get(String(stageid / 10000 | 0));
+    };
+
+    getStageGroup(stagegroupid) {
+        return this.#stageGroupMap.get(String(stagegroupid));
+    };
+
+    getChapterGroup(chaptergroupid) {
+        return this.#chapterGroupMap.get(String(chaptergroupid));
+    };
+
+    #mapper = new XmlMapper();
+
+    /** @type {Map<string, BgrXmlUnitBase>} */
+    #unitBaseMap;
+    /** @type {Map<string, BgrXmlCharacter>} */
+    #characterMap;
+    /** @type {Map<string, BgrXmlSkillBase>} */
+    #skillBaseMap;
+    /** @type {Map<string, BgrXmlEquipBase>} */
+    #equipBaseMap;
+    /** @type {Map<string, BgrXmlBufferBase>} */
+    #bufferBaseMap;
+    /** @type {Map<string, BgrXmlItem>} */
+    #itemMap;
+    /** @type {Map<string, BgrXmlSpecialItem>} */
+    #specialItemMap;
+    /** @type {Map<string, BgrXmlAchievement>} */
+    #achievementMap;
+    /** @type {Map<string, BgrXmlQuest>} */
+    #questMap;
+
+    /** @type {Map<string, BgrXmlStage>} */
+    #stageMap;
+    /** @type {Map<string, BgrXmlStageList>} */
+    #stageListMap;
+    /** @type {Map<string, BgrXmlStageArea>} */
+    #stageAreaMap;
+    /** @type {Map<string, BgrXmlStageGroup>} */
+    #stageGroupMap;
+    /** @type {Map<string, BgrXmlChapterGroup>} */
+    #chapterGroupMap;
+    /** @type {Map<string, BgrXmlCharacterEvent>} */
+    #characterEventMap;
+}
 
 /**
  * @constructor BGR unit base
@@ -302,6 +380,7 @@ export function BgrXmlUnitBase(node) {
     this.gpItem = node.getAttribute('gpitem');
     this.attackSkill = node.getAttribute('askill');
     this.leaderSkill = node.getAttribute('lskill');
+    this.leaderSkill = this.leaderSkill ? this.leaderSkill.split('/') : [];
     this.damageDead = node.getAttribute('damage_dead');
     this.damageScore = node.getAttribute('damage_score');
     this.summonCooldown = node.getAttribute('summon_cd');
@@ -407,6 +486,10 @@ export function BgrXmlSkillBase(node) {
             aeraDuration: null,
         }
     ];
+
+    for (let buffer of this.buffer) {
+        buffer.id = buffer.id ? buffer.id.split('/') : [];
+    }
 
     this.comment = translate(node.getAttribute('comment'));
 }

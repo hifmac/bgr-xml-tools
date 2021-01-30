@@ -11,8 +11,7 @@ import {
     rankNumber2String,
     getProperty,
     isTrue,
-    sortBy,
-    calculateParameter
+    sortBy
 } from './bgr/bgr.util.js'
 import { Table } from './bgr/bgr.table.js'
 
@@ -34,9 +33,6 @@ DataBrowser.prototype.onDataTypeChanged = function DataBrowser_onDataTypeChanged
     }
 
     switch (this.__dataBrowserType.value) {
-    case 'ally-unit-full-data':
-        this.setAllyUnitFullDataTable();
-        break;
     case 'unit':
         this.setUnitTable();
         break;
@@ -68,43 +64,6 @@ DataBrowser.prototype.onDataTypeChanged = function DataBrowser_onDataTypeChanged
         this.setStageTable();
         break;
     }
-};
-
-/**
- * make unit table rows
- * @returns {(number | string)[][]} table rows
- */
-DataBrowser.prototype.setAllyUnitFullDataTable = function DataBrowser_setAllyUnitFullDataTable() {
-    const rows = [];
-    this.__loader.forEachUnitBase(function(unitBase) {
-        rows.push([
-            unitBase.id,
-            unitBase.groupId,
-            unitBase.name,
-            isTrue(unitBase.bgRank) ? 'BG' : rankNumber2String(parseInt(unitBase.rank)),
-            unitBase.maxLv,
-            unitBase.attribute,
-            unitBase.summonCooldown,
-            unitBase.hp,
-            unitBase.hpRate,
-            unitBase.attack,
-            unitBase.attackRate,
-            unitBase.speed,
-            unitBase.speedRate,
-            unitBase.defense,
-            unitBase.defenseRate,
-            concat(parseInt(unitBase.critical * 1000) / 10, '%'),
-            unitBase.move,
-            unitBase.suicideTime,
-            unitBase.suicideHp,
-            unitBase.normalSkill,
-            unitBase.attackSkill,
-            unitBase.leaderSkill,
-            unitBase.monsterSkill,
-            unitBase.monsterAi,
-        ]);
-    });
-    return rows;
 };
 
 /**

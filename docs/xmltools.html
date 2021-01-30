@@ -37,6 +37,9 @@
                 <li class="nav-item">
                     <a href="#data-browser" data-toggle="list" class="nav-link">各種データ</a>
                 </li>
+                <li class="nav-item">
+                    <a href="#elg-data-browser" data-toggle="list" class="nav-link">各種データ(ズリッター)</a>
+                </li>
             </ul>
 
             <div class="tab-content p-2">
@@ -80,7 +83,6 @@
                             <label for="data-browser-type">種類：</label>
                             <select class="form-control mr-2" id="data-browser-type">
                                 <option value="none">--</option>
-                                <option value="ally-unit-full-data">味方ユニット(フル)</option>
                                 <option value="unit">ユニット</option>
                                 <option value="character">キャラクター</option>
                                 <option value="equip">装備</option>
@@ -104,6 +106,24 @@
                     <table class="table table-hover table-striped table-bordered" id="data-browser-table"></table>
                 </div>
                 <!-- Data Browser pane -->
+
+                <!-- ELG Data Browser pane -->
+                <div class="tab-pane fade" id="elg-data-browser">
+                    <div class="border p-2 mb-2">
+                        <div class="form-group form-inline">
+                            <label for="data-browser-type">種類：</label>
+                            <select class="form-control mr-2" id="elg-data-browser-type">
+                                <option value="none">--</option>
+                                <option value="unit">ユニット</option>
+                                <option value="equip">装備</option>
+                                <option value="monster">モンスター</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="elg-data-browser-table"></div>
+                </div>
+                <!-- ELG Data Browser pane -->
             </div>
 
         </div>
@@ -117,9 +137,6 @@
                 <a href="https://jquery.com/">jQuery</a> (C) 2020 The jQuery Foundation. jQuery License<br/>
                 <a href="https://popper.js.org/">popper.js</a> (C) 2020 MIT License<br/>
                 <a href="https://datatables.net/">DataTables</a> (C) 2007-2020 MIT License<br/>
-                <!-- Bootstrap treeview plugin
-                <a href="https://github.com/jonmiles/bootstrap-treeview">Bootstrap treeview</a> (C) 2013 Jonathan Miles. Apache License 2.0
-                 -->
             </div>
             <!-- Copyright -->
         </footer>
