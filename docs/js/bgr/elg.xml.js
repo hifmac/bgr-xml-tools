@@ -52,6 +52,7 @@ export class ElgXmlLoader {
             this.talentMap = this.#mapper.mapElementsByTagName(elgxml, 'talent_map', ElgTalentMap);
             this.heroStrengthenEff = this.#mapper.mapElementsByTagName(elgxml, 'hero_strengthen_eff', ElgHeroStrengthenEff);
             this.heroStrengthenSet = this.#mapper.mapElementsByTagName(elgxml, 'hero_strengthen_set', ElgHeroStrengthenSet);
+            this.favor = this.#mapper.mapElementsByTagName(elgxml, 'favor', ElgFavor);
 
             console.log(this.#mapper.keySet);
 
@@ -119,7 +120,7 @@ class ElgHero {
     }
     
     get is_front() {
-        return this.#element.getAttribute("is_front");
+        return this.#element.getAttribute("is_front") === '是';
     }
     
     get nskill() {
@@ -621,6 +622,70 @@ class ElgHeroStrengthenSet {
             makeList(this.#element, "ex3_eff_g"),
             makeList(this.#element, "ex4_eff_g"),
         ];
+    }
+
+    #element;
+}
+
+class ElgFavor {
+    constructor(element) {
+        this.#element = element;
+    }
+
+    get id() {
+        return this.#element.getAttribute("id");
+    }
+    
+    get hero_id() {
+        return this.#element.getAttribute("hero_id");
+    }
+    
+    get max_gp() {
+        return this.#element.getAttribute("max_gp");
+    }
+    
+    get memo_need_gp() {
+        return makeList(this.#element, "memo_need_gp");
+    }
+    
+    get memo_cg() {
+        return makeList(this.#element, "memo_cg");
+    }
+    
+    get open_reward() {
+        return makeList(this.#element, "open_reward");
+    }
+    
+    get memory() {
+        return makeList(this.#element, "memory");
+    }
+    
+    get memo_cg() {
+        return makeList(this.#element, "memo_cg");
+    }
+    
+    get need_gp() {
+        return makeList(this.#element, "need_gp");
+    }
+    
+    get favor_dialog() {
+        return makeList(this.#element, "favor_dialog");
+    }
+    
+    get reward() {
+        return makeList(this.#element, "reward");
+    }
+    
+    get favor_item() {
+        return this.#element.getAttribute("favor_item");
+    }
+    
+    get status_type() {
+        return makeList(this.#element, "status_type");
+    }
+    
+    get status_val() {
+        return makeList(this.#element, "status_val");
     }
 
     #element;

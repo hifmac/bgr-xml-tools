@@ -6,6 +6,7 @@
  */
 'use strict';
 
+import { zip } from "./bgr/bgr.util.js";
 import { ElgXmlLoader } from "./bgr/elg.xml.js";
 
 function createTable(data) {
@@ -191,10 +192,15 @@ export class ElgDataBrowser {
                 };
                 const heroStrSet = this.#loader.heroStrengthenSet.get(hero.id);
                 if (heroStrSet) {
-                    for (const neff of heroStrSet.n_eff_g) {
-                        for (const effId of this.#loader.heroStrengthenEff.keys()) {
-                            const eff = this.#loader.heroStrengthenEff.get(effId);
-                            if (eff.gid === neff) {
+                    const effectIds = [];
+                    effectIds.push(...heroStrSet.n_eff_g);
+                    for (const exeff of heroStrSet.ex_eff_g) {
+                        effectIds.push(...exeff);
+                    }
+
+                    for (const effId of effectIds) {
+                        for (const eff of this.#loader.heroStrengthenEff.values()) {
+                            if (eff.gid === effId) {
                                 if (eff.effect_type in totalEffect) {
                                     totalEffect[eff.effect_type] += eff.sp_val | 0;
                                 }
@@ -202,6 +208,15 @@ export class ElgDataBrowser {
                         }
                     }
                 }
+
+                const favor = this.#loader.favor.get(hero.favor_id);
+                if (favor) {
+                    for (const status of zip(favor.status_type, favor.status_val)) {
+                        totalEffect[status[0]] += status[1] | 0;
+                    }
+                }
+
+                console.log(name, totalEffect,hero.hp, hero.hp_add * hero.maxLevel());
 
                 this.#table.appendChild(createCollapse('elg-hero-' + id, name, [
                     {

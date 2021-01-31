@@ -335,6 +335,17 @@ export function calculateParameter(parameter, rate, level) {
     return parseFloat(parameter || 0) + parseFloat(rate || 0) * level;
 }
 
+export function* zip() {
+    const length = Math.min(...(Array.from(arguments, (x) => x.length)));
+    for (let i = 0; i < length; ++i) {
+        const itor = [];
+        for (const arr of arguments) {
+            itor.push(arr[i]);
+        }
+        yield itor;
+    }
+}
+
 /**
  * inline form checkbox
  * @param {string} id 
