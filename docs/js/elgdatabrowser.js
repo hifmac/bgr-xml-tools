@@ -175,7 +175,35 @@ export class ElgDataBrowser {
                     ]);
                 }
 
-                this.#table.appendChild(createCollapse('elg-hero-' + id, hero.name, [
+                let name = hero.rank + ' ';
+                if (hero.sub_name) {
+                    name += `[${hero.sub_name}]`;
+                }
+                name += `${hero.name} Lv${hero.maxLevel()}`;
+
+                const totalEffect = {
+                    HP: 0,
+                    ATK: 0,
+                    DEF: 0,
+                    LUK: 0,
+                    SPD: 0,
+                    MOV: 0,
+                };
+                const heroStrSet = this.#loader.heroStrengthenSet.get(hero.id);
+                if (heroStrSet) {
+                    for (const neff of heroStrSet.n_eff_g) {
+                        for (const effId of this.#loader.heroStrengthenEff.keys()) {
+                            const eff = this.#loader.heroStrengthenEff.get(effId);
+                            if (eff.gid === neff) {
+                                if (eff.effect_type in totalEffect) {
+                                    totalEffect[eff.effect_type] += eff.sp_val | 0;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                this.#table.appendChild(createCollapse('elg-hero-' + id, name, [
                     {
                         head: [
                             '名前',
@@ -190,8 +218,8 @@ export class ElgDataBrowser {
                             'ATK',
                             'DEF',
 
-                            'SPD',
                             'LUK',
+                            'SPD',
                             'MOVE'
                         ],
                         body: [[
@@ -203,13 +231,13 @@ export class ElgDataBrowser {
 
                             hero.attr,
                             hero.job,
-                            hero.hp,
-                            hero.atk,
-                            hero.def,
+                            (parseInt(hero.hp) + hero.hp_add * hero.maxLevel() + totalEffect.HP) * 1.4 | 0,
+                            (parseInt(hero.atk) + hero.atk_add * hero.maxLevel() + totalEffect.ATK) * 1.4 | 0,
+                            (parseInt(hero.def) + hero.def_add * hero.maxLevel() + totalEffect.DEF) * 1.4 | 0,
 
-                            hero.spd,
-                            hero.luk,
-                            hero.move
+                            (parseInt(hero.luk) + totalEffect.LUK) * 1.4 | 0,
+                            (parseInt(hero.spd) + totalEffect.SPD) * 1.4 | 0,
+                            parseInt(hero.move) + totalEffect.MOV | 0
                         ]],
                     },
                     nskillTable,

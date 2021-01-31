@@ -50,6 +50,8 @@ export class ElgXmlLoader {
             this.buff = this.#mapper.mapElementsByTagName(elgxml, 'buff', ElgBuff);
             this.talent = this.#mapper.mapElementsByTagName(elgxml, 'talent', ElgTalent);
             this.talentMap = this.#mapper.mapElementsByTagName(elgxml, 'talent_map', ElgTalentMap);
+            this.heroStrengthenEff = this.#mapper.mapElementsByTagName(elgxml, 'hero_strengthen_eff', ElgHeroStrengthenEff);
+            this.heroStrengthenSet = this.#mapper.mapElementsByTagName(elgxml, 'hero_strengthen_set', ElgHeroStrengthenSet);
 
             console.log(this.#mapper.keySet);
 
@@ -65,6 +67,23 @@ export class ElgXmlLoader {
 class ElgHero {
     constructor(element) {
         this.#element = element;
+    }
+
+    maxLevel() {
+        switch (this.rank) {
+        case '星1':
+            return 60;
+        case '星2':
+            return 70;
+        case '星3':
+            return 80;
+        case '星4':
+            return 90;
+        case '星5':
+            return 100;       
+        default:
+            throw new Error(`${this.rank} is not supported`);
+        }
     }
 
     get id() {
@@ -504,17 +523,17 @@ class ElgTalent {
     }
 
     get id() {
-        return this.#element.id;
+        return this.#element.getAttribute("id");
     }
     
     get effect_type() {
-        return this.#element.effect_type;
+        return this.#element.getAttribute("effect_type");
     }
     
     get sp_val() {
-        return this.#element.sp_val;
+        return this.#element.getAttribute("sp_val");
     }
-    
+
     get material() {
         return makeList(this.#element, 'material');
     }
@@ -532,11 +551,76 @@ class ElgTalentMap {
     }
 
     get id() {
-        return this.#element.id;
+        return this.#element.getAttribute("id");
     }
 
     get talent_id() {
         return makeList(this.#element, 'talent_id');
+    }
+
+    #element;
+}
+
+class ElgHeroStrengthenEff {
+    constructor(element) {
+        this.#element = element;
+    }
+
+    get id() {
+        return this.#element.getAttribute("id");
+    }
+
+    get gid() {
+        return this.#element.getAttribute("gid");
+    }
+    
+    get effect_type() {
+        return this.#element.getAttribute("effect_type");
+    }
+    
+    get sp_val() {
+        return this.#element.getAttribute("sp_val");
+    }
+    
+    get mat_xid() {
+        return makeList(this.#element, "mat_xid");
+    }
+    
+    get mat_num() {
+        return makeList(this.#element, "mat_num");
+    }
+
+    #element;
+}
+
+class ElgHeroStrengthenSet {
+    constructor(element) {
+        this.#element = element;
+    }
+
+    get id() {
+        return this.#element.getAttribute("id");
+    }
+
+    get n_eff_g() {
+        return makeList(this.#element, "n_eff_g");
+    }
+    
+    get pick_skill_g() {
+        return this.#element.getAttribute("pick_skill_g");
+    }
+    
+    get b_skill_g() {
+        return makeList(this.#element, "b_skill_g");
+    }
+    
+    get ex_eff_g() {
+        return [
+            makeList(this.#element, "ex_eff_g"),
+            makeList(this.#element, "ex2_eff_g"),
+            makeList(this.#element, "ex3_eff_g"),
+            makeList(this.#element, "ex4_eff_g"),
+        ];
     }
 
     #element;
